@@ -101,7 +101,13 @@ Map stream names to canonical messages in `proto/chronicle.proto`. Examples:
 
 Use generated schemas from `src/generated/chronicle_pb.ts` with `decodeEncounterPayloads()`.
 
-### 6. Replay
+### 6. Pets and controlled units
+
+A caster GUID may identify a pet, guardian, charmed unit, or vehicle rather than a player. For owner-attributed metrics, declare `unit_classification` alongside the activity stream and decode it with `UnitClassificationSchema`.
+
+Merge classification and activity events per encounter by `EventMeta.index`. Track the latest `controller` or `owner` for each target, then fall back to `snapshot.instance.units[target].owner` when no temporal classification exists. Do not rely only on `snapshot.instance.players[caster]`, and do not import Chronicle's private classifier.
+
+### 7. Replay
 
 `snapshot.sync.timestampMs` is an absolute Unix timestamp.
 
@@ -112,11 +118,11 @@ Choose explicitly:
 
 Never fetch or decode a stream on every replay update. Chronicle may update the timestamp frequently during playback.
 
-### 7. Selection
+### 8. Selection
 
 When `snapshot.selection.encounterIds` changes, send only the new IDs to the worker. Reuse per-encounter aggregates. Player/enemy selection can be treated similarly if the panel supports it.
 
-### 8. Cleanup
+### 9. Cleanup
 
 `destroy()` must be idempotent in effect. It must stop worker activity, detach listeners, cancel timers/animation frames, disconnect observers, release references, and remove plugin DOM. Chronicle also terminates the host-managed worker as a fallback, but the plugin must still clean up correctly.
 

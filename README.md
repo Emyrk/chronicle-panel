@@ -6,7 +6,7 @@ One repository is a **panel library**. This repository publishes two panels from
 
 | Panel ID | Streams | What it demonstrates |
 |---|---|---|
-| `damage-summary` | `damage` | Fetch once, transfer to a plugin worker, aggregate selected encounters |
+| `damage-summary` | `damage`, `unit_classification` | Attribute pets through temporal ownership and increment totals as replay advances |
 | `replay-casts` | `spell_go` | Decode once, then follow Chronicle's replay timestamp without reprocessing |
 
 Custom panels are trusted code. Installing one gives it access comparable to Chronicle's own frontend JavaScript.
@@ -121,6 +121,12 @@ The protobuf message type is selected by the requested stream. The canonical sch
 
 Do not retain decoded event objects unnecessarily. Real logs are large. Aggregate while decoding, or build compact per-encounter indexes as the examples do.
 
+## Pets and temporal ownership
+
+Pet ownership can change during an encounter through charms, vehicles, or other control effects. Do not classify damage only from the static unit snapshot. Panels that attribute pet activity should declare both their activity stream and `unit_classification`, merge those events by `EventMeta.index`, and prefer the latest `controller` or `owner` before falling back to `snapshot.instance.units[guid].owner`.
+
+The host intentionally exposes raw streams rather than Chronicle's private in-memory classifier. This keeps the plugin contract stable and lets the worker reproduce ownership at the exact point each event occurred.
+
 ## Replay and Sync Mode
 
 `snapshot.sync` is presentation state:
@@ -133,7 +139,7 @@ Do not retain decoded event objects unnecessarily. Real logs are large. Aggregat
 }
 ```
 
-The `replay-casts` example decodes the full selected data once and filters the rendered result when `timestampMs` changes. This mirrors Chronicle panels with full-data Sync behavior and avoids decoding the stream every replay frame.
+The `replay-casts` example decodes the full selected data once and filters the rendered result when `timestampMs` changes. The `damage-summary` example keeps a timestamp-sorted event index and advances an accumulator as replay moves forward, resetting it only for backward seeks or selection changes. Neither panel refetches or decodes streams on replay ticks.
 
 Guidelines:
 

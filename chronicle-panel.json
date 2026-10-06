@@ -3,7 +3,7 @@
   "plugin": {
     "id": "github:emyrk/chronicle-panel",
     "name": "Chronicle Panel Examples",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Reference library containing multiple trusted Chronicle custom panels.",
     "homepage": "https://github.com/Emyrk/chronicle-panel"
   },
@@ -19,8 +19,8 @@
     {
       "id": "damage-summary",
       "name": "Example: Damage Summary",
-      "description": "Aggregates selected encounters by player in a plugin-owned worker.",
-      "streams": ["damage"],
+      "description": "Aggregates player and pet damage through Chronicle replay in a plugin-owned worker.",
+      "streams": ["damage", "unit_classification"],
       "worker": true
     },
     {

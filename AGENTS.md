@@ -48,6 +48,14 @@ Before changing a panel:
 
 When the schema snapshot changes, regenerate `src/generated/chronicle_pb.ts` with `buf generate`, then run all validation.
 
+## Entity classification
+
+- Player-only lookups are insufficient for pets, guardians, charms, and vehicles.
+- Panels that attribute unit activity should declare `unit_classification` alongside the activity stream.
+- Merge classification and activity messages by encounter and `EventMeta.index` in the worker.
+- Resolve the current `controller` or `owner` first, then fall back to `snapshot.instance.units[guid].owner`.
+- Keep this temporal state worker-local; Chronicle does not expose its private classifier object through the host API.
+
 ## Adding a panel
 
 1. Choose a stable lowercase ID matching `[a-z0-9._-]+`.

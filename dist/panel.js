@@ -2,9 +2,6 @@
 function formatNumber(value) {
   return new Intl.NumberFormat().format(value);
 }
-function sameSelection(a, b) {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
 async function mountPanel(request) {
   const { panelId, root, api } = request;
   const document = root.host.ownerDocument;
@@ -104,32 +101,39 @@ async function mountPanel(request) {
   worker.onerror = (event) => renderError(`Plugin worker failed: ${event.message}`);
   app.innerHTML = '<div class="state">Loading Chronicle event stream\u2026</div>';
   try {
-    const stream = await api.events.getStream(streamType);
+    const [stream, classificationStream] = await Promise.all([
+      api.events.getStream(streamType),
+      panelId === "damage-summary" ? api.events.getStream("unit_classification") : Promise.resolve(null)
+    ]);
     if (api.lifecycle.signal.aborted || destroyed) return { destroy() {
     } };
+    const transfer = classificationStream ? [stream.data, classificationStream.data] : [stream.data];
     worker.postMessage(
       {
         type: "init",
         panelId,
         streamType,
         data: stream.data,
+        classificationData: classificationStream?.data,
         selectedEncounterIds: snapshot.selection.encounterIds,
-        players: snapshot.instance.players
+        players: snapshot.instance.players,
+        units: snapshot.instance.units,
+        sync: { enabled: snapshot.sync.enabled, timestampMs: snapshot.sync.timestampMs }
       },
-      [stream.data]
+      transfer
     );
   } catch (error) {
     renderError(error instanceof Error ? error.message : String(error));
   }
   return {
     update(next) {
-      const selectionChanged = !sameSelection(snapshot.selection.encounterIds, next.selection.encounterIds);
       snapshot = next;
-      if (selectionChanged) {
-        worker.postMessage({ type: "selection", selectedEncounterIds: next.selection.encounterIds });
-      } else if (panelId === "replay-casts") {
-        renderCasts();
-      }
+      worker.postMessage({
+        type: "update",
+        selectedEncounterIds: next.selection.encounterIds,
+        sync: { enabled: next.sync.enabled, timestampMs: next.sync.timestampMs }
+      });
+      if (panelId === "replay-casts") renderCasts();
     },
     destroy() {
       destroyed = true;

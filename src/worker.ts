@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
-import { DamageSchema, SpellGoSchema } from "./generated/chronicle_pb";
+import { DamageSchema, SpellGoSchema, UnitClassificationSchema } from "./generated/chronicle_pb";
+import { DamageAccumulator, resolveDamageEvents, type DamageRow, type ResolvedDamageEvent } from "./damage";
 import { decodeEncounterPayloads } from "./sdk/stream";
 
 interface InitMessage {
@@ -8,18 +9,20 @@ interface InitMessage {
   panelId: string;
   streamType: "damage" | "spell_go";
   data: ArrayBuffer;
+  classificationData?: ArrayBuffer;
   selectedEncounterIds: string[];
   players: Record<string, { name: string }>;
+  units: Record<string, { name: string; owner?: string | null }>;
+  sync: { enabled: boolean; timestampMs: number | null };
 }
 
-interface SelectionMessage {
-  type: "selection";
+interface UpdateMessage {
+  type: "update";
   selectedEncounterIds: string[];
+  sync: { enabled: boolean; timestampMs: number | null };
 }
 
-type WorkerRequest = InitMessage | SelectionMessage | { type: "dispose" };
-
-type DamageEncounterTotals = Map<string, Map<string, number>>;
+type WorkerRequest = InitMessage | UpdateMessage | { type: "dispose" };
 interface CastRow {
   encounterId: string;
   atMs: number;
@@ -32,20 +35,15 @@ interface CastRow {
 
 let panelId = "";
 let selected = new Set<string>();
-let damageByEncounter: DamageEncounterTotals = new Map();
+let sync: InitMessage["sync"] = { enabled: false, timestampMs: null };
+let damageEvents: ResolvedDamageEvent[] = [];
+let damageAccumulator = new DamageAccumulator();
 let casts: CastRow[] = [];
 
 function publish(): void {
   if (panelId === "damage-summary") {
-    const totals = new Map<string, number>();
-    for (const encounterId of selected) {
-      for (const [name, amount] of damageByEncounter.get(encounterId) ?? []) {
-        totals.set(name, (totals.get(name) ?? 0) + amount);
-      }
-    }
-    const rows = [...totals.entries()]
-      .map(([name, amount]) => ({ name, amount }))
-      .sort((a, b) => b.amount - a.amount);
+    const cutoff = sync.enabled ? sync.timestampMs : null;
+    const rows: DamageRow[] = damageAccumulator.update(damageEvents, selected, cutoff);
     self.postMessage({ type: "damage-result", rows });
     return;
   }
@@ -62,26 +60,27 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     self.close();
     return;
   }
-  if (message.type === "selection") {
+  if (message.type === "update") {
     selected = new Set(message.selectedEncounterIds);
+    sync = message.sync;
     publish();
     return;
   }
 
   panelId = message.panelId;
   selected = new Set(message.selectedEncounterIds);
+  sync = message.sync;
 
   if (message.streamType === "damage") {
-    damageByEncounter = new Map();
-    for (const payload of decodeEncounterPayloads(DamageSchema, message.data)) {
-      const totals = new Map<string, number>();
-      for (const damage of payload.events) {
-        const casterId = damage.caster ?? "";
-        const name = message.players[casterId]?.name ?? (casterId || "Unknown");
-        totals.set(name, (totals.get(name) ?? 0) + damage.amount);
-      }
-      damageByEncounter.set(payload.encounterId, totals);
-    }
+    damageEvents = resolveDamageEvents(
+      decodeEncounterPayloads(DamageSchema, message.data),
+      message.classificationData
+        ? decodeEncounterPayloads(UnitClassificationSchema, message.classificationData)
+        : [],
+      message.players,
+      message.units,
+    );
+    damageAccumulator = new DamageAccumulator();
   } else {
     casts = [];
     for (const payload of decodeEncounterPayloads(SpellGoSchema, message.data)) {
