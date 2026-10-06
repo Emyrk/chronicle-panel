@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "plugin": {
+    "id": "github:emyrk/chronicle-panel",
+    "name": "Chronicle Panel Examples",
+    "version": "1.0.0",
+    "description": "Reference library containing multiple trusted Chronicle custom panels.",
+    "homepage": "https://github.com/Emyrk/chronicle-panel"
+  },
+  "host": {
+    "api_version": 1
+  },
+  "artifacts": {
+    "entry": "dist/panel.js",
+    "worker": "dist/worker.js",
+    "styles": "dist/panel.css"
+  },
+  "panels": [
+    {
+      "id": "damage-summary",
+      "name": "Example: Damage Summary",
+      "description": "Aggregates selected encounters by player in a plugin-owned worker.",
+      "streams": ["damage"],
+      "worker": true
+    },
+    {
+      "id": "replay-casts",
+      "name": "Example: Replay Casts",
+      "description": "Shows casts up to Chronicle's current replay timestamp.",
+      "streams": ["spell_go"],
+      "worker": true
+    }
+  ]
+}
