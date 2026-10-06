@@ -30,6 +30,7 @@ function sameSelection(a: string[], b: string[]): boolean {
 
 async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<ChroniclePanelInstanceV1> {
   const { panelId, root, api } = request;
+  const document = root.host.ownerDocument;
   let snapshot = request.snapshot;
   let damageRows: DamageRow[] = [];
   let castRows: CastRow[] = [];

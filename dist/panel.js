@@ -7,6 +7,7 @@ function sameSelection(a, b) {
 }
 async function mountPanel(request) {
   const { panelId, root, api } = request;
+  const document = root.host.ownerDocument;
   let snapshot = request.snapshot;
   let damageRows = [];
   let castRows = [];
