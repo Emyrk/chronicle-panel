@@ -3,7 +3,7 @@
   "plugin": {
     "id": "github:emyrk/chronicle-panel",
     "name": "Chronicle Panel Examples",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Reference library containing multiple trusted Chronicle custom panels.",
     "homepage": "https://github.com/Emyrk/chronicle-panel"
   },
@@ -21,6 +21,13 @@
       "name": "Example: Damage Summary",
       "description": "Aggregates player and pet damage through Chronicle replay in a plugin-owned worker.",
       "streams": ["damage", "unit_classification"],
+      "worker": true
+    },
+    {
+      "id": "gear-rarity",
+      "name": "Example: Gear Rarity",
+      "description": "Counts every player's equipped items by rarity with sortable columns.",
+      "streams": ["combatant_info"],
       "worker": true
     },
     {

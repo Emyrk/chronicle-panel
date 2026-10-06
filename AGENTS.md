@@ -48,6 +48,13 @@ Before changing a panel:
 
 When the schema snapshot changes, regenerate `src/generated/chronicle_pb.ts` with `buf generate`, then run all validation.
 
+## Game-data lookups
+
+- Event streams omit static metadata such as item quality.
+- Use `api.gameData.getItemMetadata(itemIds)`; never call Chronicle's private `/internal/gamedata` routes directly.
+- Collect and deduplicate IDs in the worker, then make one bounded host request.
+- Return metadata to the worker for aggregation rather than processing large equipment payloads on the main thread.
+
 ## Entity classification
 
 - Player-only lookups are insufficient for pets, guardians, charms, and vehicles.

@@ -43,6 +43,44 @@ header span { color: var(--muted-foreground, #a1a1aa); font-size: 11px; }
 .bar { height: 5px; background: color-mix(in srgb, currentColor 8%, transparent); border-radius: 999px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: #f59e0b; border-radius: inherit; }
 
+.gear-table { min-height: 0; overflow: auto; scrollbar-width: thin; }
+.gear-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) repeat(8, minmax(56px, 72px));
+  min-width: 640px;
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+}
+.gear-row > * { padding: 6px 8px; }
+.gear-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--card, #111318);
+  border-bottom-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+.gear-heading button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+.gear-heading button:first-child { text-align: left; }
+.gear-heading button:hover { background: color-mix(in srgb, currentColor 7%, transparent); }
+.gear-player { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.gear-count { text-align: center; font-variant-numeric: tabular-nums; }
+.rarity-poor { color: #9d9d9d !important; }
+.rarity-common { color: #e5e7eb !important; }
+.rarity-uncommon { color: #1eff00 !important; }
+.rarity-rare { color: #56a0ff !important; }
+.rarity-epic { color: #c56cff !important; }
+.rarity-legendary { color: #ff8000 !important; }
+.rarity-artifact { color: #e6cc80 !important; }
+.rarity-unknown { color: var(--muted-foreground, #a1a1aa) !important; }
+
 .cast-row {
   display: grid;
   grid-template-columns: 44px minmax(90px, .8fr) minmax(120px, 1.2fr) minmax(80px, 1fr);

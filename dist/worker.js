@@ -2668,6 +2668,7 @@ var file_chronicle = /* @__PURE__ */ fileDesc("Cg9jaHJvbmljbGUucHJvdG8SDmNocm9ua
 var DamageSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 5);
 var SpellGoSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 14);
 var UnitClassificationSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 17);
+var CombatantInfoSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 19);
 
 // src/damage.ts
 function rootOwner(guid, temporalOwners, units) {
@@ -2767,6 +2768,66 @@ var DamageAccumulator = class {
   }
 };
 
+// src/gearRarity.ts
+var GEAR_RARITIES = [
+  { quality: 0, key: "poor", label: "Poor", shortLabel: "Gray" },
+  { quality: 1, key: "common", label: "Common", shortLabel: "White" },
+  { quality: 2, key: "uncommon", label: "Uncommon", shortLabel: "Green" },
+  { quality: 3, key: "rare", label: "Rare", shortLabel: "Blue" },
+  { quality: 4, key: "epic", label: "Epic", shortLabel: "Purple" },
+  { quality: 5, key: "legendary", label: "Legendary", shortLabel: "Orange" },
+  { quality: 6, key: "artifact", label: "Artifact", shortLabel: "Artifact" }
+];
+function latestGearByPlayer(payloads) {
+  const latest = /* @__PURE__ */ new Map();
+  for (const payload of payloads) {
+    for (const event of payload.events) {
+      const atMs = payload.firstTimestampMs + Number(event.meta?.offsetMilli ?? 0n);
+      const index = event.meta?.index ?? 0;
+      const previous = latest.get(event.guid);
+      if (previous && (previous.atMs > atMs || previous.atMs === atMs && previous.index > index)) continue;
+      latest.set(event.guid, {
+        atMs,
+        index,
+        player: {
+          guid: event.guid,
+          name: event.name || event.guid,
+          heroClass: event.heroClass,
+          itemIds: event.gear.map((slot) => slot.itemId).filter((itemId) => itemId > 0)
+        }
+      });
+    }
+  }
+  return [...latest.values()].map((entry) => entry.player);
+}
+function latestGearForSelectedEncounters(payloads, selectedEncounterIds) {
+  return latestGearByPlayer(payloads.filter((payload) => selectedEncounterIds.has(payload.encounterId)));
+}
+function uniqueGearItemIds(players) {
+  return [...new Set(players.flatMap((player) => player.itemIds))].sort((a, b) => a - b);
+}
+function buildGearRarityRows(players, metadata) {
+  const qualities = new Map(metadata.map((item) => [item.entry, item.quality]));
+  return players.map((player) => {
+    const counts = {
+      poor: 0,
+      common: 0,
+      uncommon: 0,
+      rare: 0,
+      epic: 0,
+      legendary: 0,
+      artifact: 0,
+      unknown: 0
+    };
+    for (const itemId of player.itemIds) {
+      const rarity = GEAR_RARITIES.find((entry) => entry.quality === qualities.get(itemId));
+      if (rarity) counts[rarity.key] += 1;
+      else counts.unknown += 1;
+    }
+    return { ...player, counts };
+  });
+}
+
 // src/sdk/stream.ts
 var decoder = new TextDecoder();
 function readVarint(data, offset) {
@@ -2820,6 +2881,22 @@ var sync = { enabled: false, timestampMs: null };
 var damageEvents = [];
 var damageAccumulator = new DamageAccumulator();
 var casts = [];
+var gearPayloads = [];
+var gearPlayers = [];
+var gearRequestId = 0;
+var gearSelectionKey = "";
+function requestGearMetadata(force = false) {
+  const selectionKey = [...selected].sort().join("\0");
+  if (!force && selectionKey === gearSelectionKey) return;
+  gearSelectionKey = selectionKey;
+  gearPlayers = latestGearForSelectedEncounters(gearPayloads, selected);
+  gearRequestId += 1;
+  self.postMessage({
+    type: "gear-item-ids",
+    requestId: gearRequestId,
+    itemIds: uniqueGearItemIds(gearPlayers)
+  });
+}
 function publish() {
   if (panelId === "damage-summary") {
     const cutoff = sync.enabled ? sync.timestampMs : null;
@@ -2827,6 +2904,7 @@ function publish() {
     self.postMessage({ type: "damage-result", rows });
     return;
   }
+  if (panelId === "gear-rarity") return;
   self.postMessage({
     type: "casts-result",
     rows: casts.filter((cast) => selected.has(cast.encounterId))
@@ -2838,10 +2916,17 @@ self.onmessage = (event) => {
     self.close();
     return;
   }
+  if (message.type === "item-metadata") {
+    if (message.requestId === gearRequestId) {
+      self.postMessage({ type: "gear-rarity-result", rows: buildGearRarityRows(gearPlayers, message.items) });
+    }
+    return;
+  }
   if (message.type === "update") {
     selected = new Set(message.selectedEncounterIds);
     sync = message.sync;
-    publish();
+    if (panelId === "gear-rarity") requestGearMetadata();
+    else publish();
     return;
   }
   panelId = message.panelId;
@@ -2855,7 +2940,7 @@ self.onmessage = (event) => {
       message.units
     );
     damageAccumulator = new DamageAccumulator();
-  } else {
+  } else if (panelId === "replay-casts") {
     casts = [];
     for (const payload of decodeEncounterPayloads(SpellGoSchema, message.data)) {
       for (const cast of payload.events) {
@@ -2871,6 +2956,10 @@ self.onmessage = (event) => {
       }
     }
     casts.sort((a, b) => a.atMs - b.atMs);
+  } else {
+    gearPayloads = decodeEncounterPayloads(CombatantInfoSchema, message.data);
+    requestGearMetadata(true);
+    return;
   }
   publish();
 };

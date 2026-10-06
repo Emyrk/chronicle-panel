@@ -1,19 +1,50 @@
+// src/gearRarity.ts
+var GEAR_RARITIES = [
+  { quality: 0, key: "poor", label: "Poor", shortLabel: "Gray" },
+  { quality: 1, key: "common", label: "Common", shortLabel: "White" },
+  { quality: 2, key: "uncommon", label: "Uncommon", shortLabel: "Green" },
+  { quality: 3, key: "rare", label: "Rare", shortLabel: "Blue" },
+  { quality: 4, key: "epic", label: "Epic", shortLabel: "Purple" },
+  { quality: 5, key: "legendary", label: "Legendary", shortLabel: "Orange" },
+  { quality: 6, key: "artifact", label: "Artifact", shortLabel: "Artifact" }
+];
+function sortGearRarityRows(rows, key, direction) {
+  const multiplier = direction === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    if (key === "name") {
+      const byName = a.name.localeCompare(b.name);
+      if (byName !== 0) return byName * multiplier;
+    } else {
+      const difference = a.counts[key] - b.counts[key];
+      if (difference !== 0) return difference * multiplier;
+    }
+    return a.name.localeCompare(b.name) || a.guid.localeCompare(b.guid);
+  });
+}
+
 // src/panel.ts
 function formatNumber(value) {
   return new Intl.NumberFormat().format(value);
+}
+function parseGearSort(option) {
+  const match = option?.match(/^gear-rarity:(name|poor|common|uncommon|rare|epic|legendary|artifact|unknown):(asc|desc)$/);
+  if (!match) return { key: "epic", direction: "desc" };
+  return { key: match[1], direction: match[2] };
 }
 async function mountPanel(request) {
   const { panelId, root, api } = request;
   const document = root.host.ownerDocument;
   let snapshot = request.snapshot;
   let damageRows = [];
+  let gearRows = [];
+  let gearSort = parseGearSort(snapshot.panel.option);
   let castRows = [];
   let destroyed = false;
   const app = document.createElement("div");
   app.className = "chronicle-example";
   root.append(app);
   const worker = api.workers.create();
-  const streamType = panelId === "damage-summary" ? "damage" : "spell_go";
+  const streamType = panelId === "damage-summary" ? "damage" : panelId === "gear-rarity" ? "combatant_info" : "spell_go";
   function renderError(message) {
     app.innerHTML = "";
     const error = document.createElement("div");
@@ -48,6 +79,70 @@ async function mountPanel(request) {
         <span class="value">${formatNumber(row.amount)}</span>
       `;
       item.querySelector(".name").textContent = row.name;
+      table.append(item);
+    }
+  }
+  function renderGear() {
+    const rows = sortGearRarityRows(gearRows, gearSort.key, gearSort.direction);
+    app.innerHTML = `
+      <header>
+        <div>
+          <strong>Gear Rarity</strong>
+          <span>${rows.length} player(s)</span>
+        </div>
+        <span class="badge">click a column to sort</span>
+      </header>
+      <div class="gear-table" role="table" aria-label="Equipped item rarity by player"></div>
+    `;
+    const table = app.querySelector(".gear-table");
+    if (rows.length === 0) {
+      table.innerHTML = '<div class="state">No combatant gear snapshots were found.</div>';
+      return;
+    }
+    const columns = [
+      { key: "name", label: "Player" },
+      ...GEAR_RARITIES.map((rarity) => ({ key: rarity.key, label: rarity.shortLabel, className: `rarity-${rarity.key}` })),
+      { key: "unknown", label: "?", className: "rarity-unknown" }
+    ];
+    const header = document.createElement("div");
+    header.className = "gear-row gear-heading";
+    for (const column of columns) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = column.className ?? "";
+      button.textContent = `${column.label}${gearSort.key === column.key ? gearSort.direction === "desc" ? " \u2193" : " \u2191" : ""}`;
+      button.title = column.key === "name" ? "Sort by player name" : `Sort by ${column.label} item count`;
+      button.addEventListener("click", () => {
+        gearSort = {
+          key: column.key,
+          direction: gearSort.key === column.key ? gearSort.direction === "desc" ? "asc" : "desc" : column.key === "name" ? "asc" : "desc"
+        };
+        api.panel.setOption(`gear-rarity:${gearSort.key}:${gearSort.direction}`);
+        renderGear();
+      });
+      header.append(button);
+    }
+    table.append(header);
+    for (const row of rows) {
+      const item = document.createElement("div");
+      item.className = "gear-row";
+      const player = document.createElement("span");
+      player.className = "gear-player";
+      player.textContent = row.name;
+      player.title = row.heroClass || row.guid;
+      item.append(player);
+      for (const rarity of GEAR_RARITIES) {
+        const count = document.createElement("span");
+        count.className = `gear-count rarity-${rarity.key}`;
+        count.textContent = String(row.counts[rarity.key]);
+        count.title = `${row.name}: ${row.counts[rarity.key]} ${rarity.label}`;
+        item.append(count);
+      }
+      const unknown = document.createElement("span");
+      unknown.className = "gear-count rarity-unknown";
+      unknown.textContent = String(row.counts.unknown);
+      unknown.title = `${row.name}: ${row.counts.unknown} unknown`;
+      item.append(unknown);
       table.append(item);
     }
   }
@@ -90,12 +185,24 @@ async function mountPanel(request) {
   }
   function render() {
     if (panelId === "damage-summary") renderDamage();
+    else if (panelId === "gear-rarity") renderGear();
     else renderCasts();
   }
   worker.onmessage = (event) => {
     if (destroyed) return;
+    if (event.data?.type === "gear-item-ids") {
+      const requestId = event.data.requestId;
+      void api.gameData.getItemMetadata(event.data.itemIds).then((items) => {
+        if (!destroyed) worker.postMessage({ type: "item-metadata", requestId, items });
+      }).catch((error) => {
+        if (!destroyed && error instanceof DOMException && error.name === "AbortError") return;
+        if (!destroyed) renderError(error instanceof Error ? error.message : String(error));
+      });
+      return;
+    }
     if (event.data?.type === "damage-result") damageRows = event.data.rows;
     if (event.data?.type === "casts-result") castRows = event.data.rows;
+    if (event.data?.type === "gear-rarity-result") gearRows = event.data.rows;
     render();
   };
   worker.onerror = (event) => renderError(`Plugin worker failed: ${event.message}`);
@@ -133,7 +240,10 @@ async function mountPanel(request) {
         selectedEncounterIds: next.selection.encounterIds,
         sync: { enabled: next.sync.enabled, timestampMs: next.sync.timestampMs }
       });
-      if (panelId === "replay-casts") renderCasts();
+      if (panelId === "gear-rarity") {
+        gearSort = parseGearSort(next.panel.option);
+        renderGear();
+      } else if (panelId === "replay-casts") renderCasts();
     },
     destroy() {
       destroyed = true;

@@ -1,13 +1,14 @@
 /// <reference lib="webworker" />
 
-import { DamageSchema, SpellGoSchema, UnitClassificationSchema } from "./generated/chronicle_pb";
+import { CombatantInfoSchema, DamageSchema, SpellGoSchema, UnitClassificationSchema, type CombatantInfo } from "./generated/chronicle_pb";
 import { DamageAccumulator, resolveDamageEvents, type DamageRow, type ResolvedDamageEvent } from "./damage";
-import { decodeEncounterPayloads } from "./sdk/stream";
+import { buildGearRarityRows, latestGearForSelectedEncounters, uniqueGearItemIds, type GearPlayerSnapshot } from "./gearRarity";
+import { decodeEncounterPayloads, type EncounterPayload } from "./sdk/stream";
 
 interface InitMessage {
   type: "init";
   panelId: string;
-  streamType: "damage" | "spell_go";
+  streamType: "damage" | "spell_go" | "combatant_info";
   data: ArrayBuffer;
   classificationData?: ArrayBuffer;
   selectedEncounterIds: string[];
@@ -22,7 +23,13 @@ interface UpdateMessage {
   sync: { enabled: boolean; timestampMs: number | null };
 }
 
-type WorkerRequest = InitMessage | UpdateMessage | { type: "dispose" };
+interface ItemMetadataMessage {
+  type: "item-metadata";
+  requestId: number;
+  items: Array<{ entry: number; quality: number }>;
+}
+
+type WorkerRequest = InitMessage | UpdateMessage | ItemMetadataMessage | { type: "dispose" };
 interface CastRow {
   encounterId: string;
   atMs: number;
@@ -39,6 +46,23 @@ let sync: InitMessage["sync"] = { enabled: false, timestampMs: null };
 let damageEvents: ResolvedDamageEvent[] = [];
 let damageAccumulator = new DamageAccumulator();
 let casts: CastRow[] = [];
+let gearPayloads: EncounterPayload<CombatantInfo>[] = [];
+let gearPlayers: GearPlayerSnapshot[] = [];
+let gearRequestId = 0;
+let gearSelectionKey = "";
+
+function requestGearMetadata(force = false): void {
+  const selectionKey = [...selected].sort().join("\0");
+  if (!force && selectionKey === gearSelectionKey) return;
+  gearSelectionKey = selectionKey;
+  gearPlayers = latestGearForSelectedEncounters(gearPayloads, selected);
+  gearRequestId += 1;
+  self.postMessage({
+    type: "gear-item-ids",
+    requestId: gearRequestId,
+    itemIds: uniqueGearItemIds(gearPlayers),
+  });
+}
 
 function publish(): void {
   if (panelId === "damage-summary") {
@@ -47,6 +71,8 @@ function publish(): void {
     self.postMessage({ type: "damage-result", rows });
     return;
   }
+
+  if (panelId === "gear-rarity") return;
 
   self.postMessage({
     type: "casts-result",
@@ -60,10 +86,17 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     self.close();
     return;
   }
+  if (message.type === "item-metadata") {
+    if (message.requestId === gearRequestId) {
+      self.postMessage({ type: "gear-rarity-result", rows: buildGearRarityRows(gearPlayers, message.items) });
+    }
+    return;
+  }
   if (message.type === "update") {
     selected = new Set(message.selectedEncounterIds);
     sync = message.sync;
-    publish();
+    if (panelId === "gear-rarity") requestGearMetadata();
+    else publish();
     return;
   }
 
@@ -81,7 +114,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
       message.units,
     );
     damageAccumulator = new DamageAccumulator();
-  } else {
+  } else if (panelId === "replay-casts") {
     casts = [];
     for (const payload of decodeEncounterPayloads(SpellGoSchema, message.data)) {
       for (const cast of payload.events) {
@@ -97,6 +130,10 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
       }
     }
     casts.sort((a, b) => a.atMs - b.atMs);
+  } else {
+    gearPayloads = decodeEncounterPayloads(CombatantInfoSchema, message.data);
+    requestGearMetadata(true);
+    return;
   }
 
   publish();

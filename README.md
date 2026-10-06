@@ -2,11 +2,12 @@
 
 Reference implementation and authoring documentation for trusted custom JavaScript panels in [Chronicle](https://github.com/Emyrk/chronicle).
 
-One repository is a **panel library**. This repository publishes two panels from one manifest and one bundled entry module:
+One repository is a **panel library**. This repository publishes three panels from one manifest and one bundled entry module:
 
 | Panel ID | Streams | What it demonstrates |
 |---|---|---|
 | `damage-summary` | `damage`, `unit_classification` | Attribute pets through temporal ownership and increment totals as replay advances |
+| `gear-rarity` | `combatant_info` | Decode equipment, request batched item quality metadata, and sort rarity counts |
 | `replay-casts` | `spell_go` | Decode once, then follow Chronicle's replay timestamp without reprocessing |
 
 Custom panels are trusted code. Installing one gives it access comparable to Chronicle's own frontend JavaScript.
@@ -45,7 +46,8 @@ During development, install a branch or commit through Chronicle's **Settings �
 ```text
 chronicle-panel.json                 Library and panel declarations
 src/panel.ts                         Browser view entry and lifecycle
-src/worker.ts                        Worker aggregation for both example panels
+src/gearRarity.ts                    Gear snapshot, rarity aggregation, and sorting helpers
+src/worker.ts                        Shared worker aggregation for all example panels
 src/panel.css                        Shadow DOM styles
 src/sdk/host.ts                      Chronicle host API v1 contract
 src/sdk/stream.ts                    chronicle-event-stream-v1 framing decoder
@@ -126,6 +128,16 @@ Do not retain decoded event objects unnecessarily. Real logs are large. Aggregat
 Pet ownership can change during an encounter through charms, vehicles, or other control effects. Do not classify damage only from the static unit snapshot. Panels that attribute pet activity should declare both their activity stream and `unit_classification`, merge those events by `EventMeta.index`, and prefer the latest `controller` or `owner` before falling back to `snapshot.instance.units[guid].owner`.
 
 The host intentionally exposes raw streams rather than Chronicle's private in-memory classifier. This keeps the plugin contract stable and lets the worker reproduce ownership at the exact point each event occurred.
+
+## Game-data metadata
+
+Event streams carry compact gameplay records. They do not duplicate static game data such as item names or quality. Use host-mediated game-data methods rather than Chronicle's private HTTP endpoints:
+
+```ts
+const items = await api.gameData.getItemMetadata(itemIds);
+```
+
+`getItemMetadata()` deduplicates a bounded batch of item IDs and returns only stable fields needed by plugins: `entry`, `name`, and numeric `quality`. Request metadata after collecting unique IDs in the worker, not once per equipped slot. The `gear-rarity` panel demonstrates the worker → host metadata request → worker aggregation flow.
 
 ## Replay and Sync Mode
 
