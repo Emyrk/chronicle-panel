@@ -35,8 +35,9 @@ Before changing a panel:
 - Do not request streams again for replay ticks or ordinary `update()` calls.
 - Do not assume one mount. Multiple instances of one panel can exist simultaneously.
 - Do not leave timers, listeners, observers, workers, or large buffers alive after `destroy()`.
-- Keep `entry` and `worker` as self-contained bundles with no runtime relative imports.
-- Commit `dist/` after every source change intended for installation.
+- Keep `entry`, optional `worker`, and optional `styles` self-contained with no unresolved runtime-relative imports or asset references.
+- Treat each manifest artifact as `{ "path", "sha256", "size" }`. Digests are lowercase SHA-256 of the exact built bytes, and sizes are exact byte lengths.
+- Run `pnpm build` to refresh artifact digests and sizes, then commit `chronicle-panel.json` and `dist/` together after every source change intended for installation.
 
 ## Canonical data sources
 
@@ -78,7 +79,8 @@ When the schema snapshot changes, regenerate `src/generated/chronicle_pb.ts` wit
 8. Implement deterministic cleanup.
 9. Add tests for helpers and worker aggregation.
 10. Run `pnpm check`, `pnpm test`, and `pnpm build`.
-11. Review and commit the generated `dist/` artifacts.
+11. Review the generated `dist/` artifacts and refreshed manifest digests and sizes.
+12. Commit `chronicle-panel.json` and `dist/` together.
 
 ## Validation
 

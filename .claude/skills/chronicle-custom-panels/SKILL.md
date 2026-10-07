@@ -177,7 +177,7 @@ dist/worker.js
 dist/panel.css
 ```
 
-`panel.js` and `worker.js` must be independently self-contained ESM files. Do not leave relative import statements in either output.
+`panel.js` and `worker.js` must be independently self-contained ESM files. The stylesheet must not retain unresolved relative imports or asset references. `pnpm build` rejects external bundle imports, then rewrites every manifest artifact's lowercase SHA-256 digest and exact byte size from the final bytes. Review and commit `chronicle-panel.json` with `dist/`; never hand-edit digests or sizes.
 
 ## Updating schemas
 

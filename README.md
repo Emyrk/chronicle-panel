@@ -27,7 +27,21 @@ chronicle-panel.json
     └── declared event streams
 ```
 
-Each release must commit the built `dist/` artifacts because Chronicle does not run package managers or build third-party repositories.
+Each artifact is an object containing its repository-relative `path`, lowercase SHA-256 digest, and exact byte size:
+
+```json
+{
+  "artifacts": {
+    "entry": {
+      "path": "dist/panel.js",
+      "sha256": "<64 lowercase hex characters>",
+      "size": 12345
+    }
+  }
+}
+```
+
+`entry` is required. `worker` and `styles` are optional, but use the same object shape when present. Each release must commit both the built `dist/` artifacts and the refreshed `chronicle-panel.json` because Chronicle does not run package managers or build third-party repositories. `pnpm build` regenerates every artifact digest and size from the final file bytes.
 
 ## Quick start
 
@@ -36,7 +50,7 @@ pnpm install
 pnpm check
 pnpm test
 pnpm build
-git add dist
+git add chronicle-panel.json dist
 ```
 
 During development, install a branch or commit through Chronicle's **Settings → Custom panels** UI. Chronicle resolves it to an immutable SHA before execution.
@@ -65,7 +79,8 @@ AGENTS.md                             Agent-first authoring guide
 4. Add worker processing in `src/worker.ts`, or omit `worker: true` if it needs none.
 5. Ensure every listener, timer, observer, stream reference, and worker is released by `destroy()`.
 6. Run `pnpm check && pnpm test && pnpm build`.
-7. Commit the updated `dist/` output.
+7. Verify `chronicle-panel.json` contains the rebuilt artifacts' SHA-256 digests and byte sizes.
+8. Commit the updated manifest and `dist/` output together.
 
 A library uses one entry module and optional shared worker/style artifacts. The host passes the selected `panelId` to `mount()`.
 

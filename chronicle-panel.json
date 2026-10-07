@@ -11,9 +11,21 @@
     "api_version": 1
   },
   "artifacts": {
-    "entry": "dist/panel.js",
-    "worker": "dist/worker.js",
-    "styles": "dist/panel.css"
+    "entry": {
+      "path": "dist/panel.js",
+      "sha256": "e5a0378daa80024bccd33bb61c05ea3fb48a2e9d384c5fd77ee6a7e6f5eb0c15",
+      "size": 10642
+    },
+    "worker": {
+      "path": "dist/worker.js",
+      "sha256": "2f765aadf467da329b6e566a23e7a73c57d84e929f5534c0ae2a1fbf93050e05",
+      "size": 136136
+    },
+    "styles": {
+      "path": "dist/panel.css",
+      "sha256": "001cc49033c3a31317ddf9dc0f021b96f78f5689ef634554685840679397eaad",
+      "size": 3393
+    }
   },
   "panels": [
     {
