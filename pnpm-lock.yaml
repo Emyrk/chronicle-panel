@@ -12,8 +12,8 @@ importers:
         specifier: ^2.11.0
         version: 2.16.0
       '@emyrk/chronicle-panel-sdk':
-        specifier: 0.1.0
-        version: 0.1.0(@bufbuild/protobuf@2.16.0)
+        specifier: 0.2.0
+        version: 0.2.0(@bufbuild/protobuf@2.16.0)
     devDependencies:
       esbuild:
         specifier: ^0.25.0
@@ -30,8 +30,8 @@ packages:
   '@bufbuild/protobuf@2.16.0':
     resolution: {integrity: sha512-FWa0sPlqYGJgpTs6OxBRcL/AW4JT0OIO+W1ajerluoTVh8CV0B7XM1qsNCRgnkSCkRCgOICKHRQlY17jrsm0+Q==}
 
-  '@emyrk/chronicle-panel-sdk@0.1.0':
-    resolution: {integrity: sha512-pvj3SwkXXiAnvXgp6/9DDMjSVH9hdllwc84cou825XkUiJUV4siGVbVIskuuJD5qL5NoWcIlZGkqgny9WFo1UQ==}
+  '@emyrk/chronicle-panel-sdk@0.2.0':
+    resolution: {integrity: sha512-mV6/1jmoael6QgAXqHgJslNTF4vylPnrt/WoWDi7DfEJ+1STSEESIRbcKblOmcRLCxsgYXnxBymbP4Twn8yqGg==}
     peerDependencies:
       '@bufbuild/protobuf': ^2.11.0
 
@@ -761,7 +761,7 @@ snapshots:
 
   '@bufbuild/protobuf@2.16.0': {}
 
-  '@emyrk/chronicle-panel-sdk@0.1.0(@bufbuild/protobuf@2.16.0)':
+  '@emyrk/chronicle-panel-sdk@0.2.0(@bufbuild/protobuf@2.16.0)':
     dependencies:
       '@bufbuild/protobuf': 2.16.0
 

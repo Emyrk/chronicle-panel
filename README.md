@@ -18,7 +18,7 @@ One repository is a **panel library**. This repository publishes three panels fr
 
 | Panel ID | Streams | What it demonstrates |
 |---|---|---|
-| `damage-summary` | `damage`, `unit_classification` | Attribute pets through temporal ownership, follow replay, and expand players into source/ability details |
+| `damage-summary` | `damage`, `unit_classification` | Attribute pets through temporal ownership, follow replay, and open floating source/ability breakouts per player |
 | `gear-rarity` | `combatant_info` | Decode equipment, request batched item quality metadata, and sort rarity counts |
 | `replay-casts` | `spell_go` | Decode once, then follow Chronicle's replay timestamp without reprocessing |
 

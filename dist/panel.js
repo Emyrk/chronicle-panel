@@ -29,6 +29,10 @@ function sortGearRarityRows(rows, key, direction) {
   });
 }
 
+// node_modules/.pnpm/@emyrk+chronicle-panel-sdk@0.2.0_@bufbuild+protobuf@2.16.0/node_modules/@emyrk/chronicle-panel-sdk/dist/v1/contracts.js
+var CUSTOM_PANEL_MAX_BREAKOUTS = 8;
+var CUSTOM_PANEL_BREAKOUT_TITLE_MAX_LENGTH = 100;
+
 // src/panel.ts
 function formatNumber(value) {
   return new Intl.NumberFormat().format(value);
@@ -43,7 +47,7 @@ async function mountPanel(request) {
   const document = root.host.ownerDocument;
   let snapshot = request.snapshot;
   let damageRows = [];
-  let expandedDamagePlayerId = null;
+  const damageBreakouts = /* @__PURE__ */ new Map();
   let gearRows = [];
   let gearSort = parseGearSort(snapshot.panel.option);
   let castRows = [];
@@ -60,10 +64,60 @@ async function mountPanel(request) {
     error.textContent = message;
     app.append(error);
   }
-  function renderDamage() {
-    if (expandedDamagePlayerId && !damageRows.some((row) => row.playerId === expandedDamagePlayerId)) {
-      expandedDamagePlayerId = null;
+  function renderDamageBreakout(playerId, handle) {
+    const row = damageRows.find((candidate) => candidate.playerId === playerId);
+    handle.root.querySelector(".damage-breakout")?.remove();
+    const breakout = document.createElement("div");
+    breakout.className = "damage-breakout";
+    if (!row || row.breakdown.length === 0) {
+      breakout.innerHTML = '<div class="state">No damage from this player in the selected encounters.</div>';
+      handle.root.append(breakout);
+      return;
     }
+    const total = document.createElement("div");
+    total.className = "damage-breakout-total";
+    total.textContent = `${formatNumber(row.amount)} total damage`;
+    const table = document.createElement("div");
+    table.setAttribute("role", "table");
+    table.setAttribute("aria-label", `${row.name} damage breakdown`);
+    table.innerHTML = '<div class="damage-breakout-row damage-breakout-heading"><span>Source</span><span>Ability</span><span>Damage</span></div>';
+    for (const detail of row.breakdown) {
+      const detailRow = document.createElement("div");
+      detailRow.className = "damage-breakout-row";
+      detailRow.innerHTML = '<span class="actor"></span><span class="ability"></span><span class="value"></span>';
+      detailRow.querySelector(".actor").textContent = detail.actorName;
+      detailRow.querySelector(".ability").textContent = detail.abilityName;
+      detailRow.querySelector(".value").textContent = formatNumber(detail.amount);
+      table.append(detailRow);
+    }
+    breakout.append(total, table);
+    handle.root.append(breakout);
+  }
+  function openDamageBreakout(row, event) {
+    for (const [playerId, handle2] of damageBreakouts) {
+      if (!handle2.root.host.isConnected) damageBreakouts.delete(playerId);
+    }
+    if (damageBreakouts.has(row.playerId)) return;
+    if (damageBreakouts.size >= CUSTOM_PANEL_MAX_BREAKOUTS) {
+      const [oldestId, oldest] = damageBreakouts.entries().next().value;
+      oldest.close();
+      damageBreakouts.delete(oldestId);
+    }
+    let handle;
+    try {
+      handle = api.breakouts.open({
+        title: `${row.name} damage`.slice(0, CUSTOM_PANEL_BREAKOUT_TITLE_MAX_LENGTH),
+        initialPosition: { x: event.clientX + 12, y: event.clientY + 12 },
+        initialSize: { width: 440, height: 320 }
+      });
+    } catch (error) {
+      renderError(error instanceof Error ? error.message : String(error));
+      return;
+    }
+    damageBreakouts.set(row.playerId, handle);
+    renderDamageBreakout(row.playerId, handle);
+  }
+  function renderDamage() {
     app.innerHTML = `
       <header>
         <div>
@@ -74,6 +128,7 @@ async function mountPanel(request) {
       </header>
       <div class="table" role="table" aria-label="Damage by player"></div>
     `;
+    for (const [playerId, handle] of damageBreakouts) renderDamageBreakout(playerId, handle);
     const table = app.querySelector(".table");
     if (damageRows.length === 0) {
       table.innerHTML = '<div class="state">No player damage in the selected encounters.</div>';
@@ -81,39 +136,19 @@ async function mountPanel(request) {
     }
     const max = damageRows[0]?.amount || 1;
     for (const [index, row] of damageRows.entries()) {
-      const expanded = expandedDamagePlayerId === row.playerId;
       const item = document.createElement("button");
       item.type = "button";
       item.className = "damage-row damage-row-button";
-      item.setAttribute("aria-expanded", String(expanded));
+      item.setAttribute("aria-haspopup", "dialog");
       item.innerHTML = `
-        <span class="rank">${expanded ? "\u25BE" : "\u25B8"} ${index + 1}</span>
+        <span class="rank">${index + 1}</span>
         <span class="name"></span>
         <span class="bar"><i style="width:${Math.max(2, row.amount / max * 100)}%"></i></span>
         <span class="value">${formatNumber(row.amount)}</span>
       `;
       item.querySelector(".name").textContent = row.name;
-      item.addEventListener("click", () => {
-        expandedDamagePlayerId = expanded ? null : row.playerId;
-        renderDamage();
-      });
+      item.addEventListener("click", (event) => openDamageBreakout(row, event));
       table.append(item);
-      if (!expanded) continue;
-      const breakout = document.createElement("div");
-      breakout.className = "damage-breakout";
-      breakout.setAttribute("role", "table");
-      breakout.setAttribute("aria-label", `${row.name} damage breakdown`);
-      breakout.innerHTML = '<div class="damage-breakout-row damage-breakout-heading"><span>Source</span><span>Ability</span><span>Damage</span></div>';
-      for (const detail of row.breakdown) {
-        const detailRow = document.createElement("div");
-        detailRow.className = "damage-breakout-row";
-        detailRow.innerHTML = '<span class="actor"></span><span class="ability"></span><span class="value"></span>';
-        detailRow.querySelector(".actor").textContent = detail.actorName;
-        detailRow.querySelector(".ability").textContent = detail.abilityName;
-        detailRow.querySelector(".value").textContent = formatNumber(detail.amount);
-        breakout.append(detailRow);
-      }
-      table.append(breakout);
     }
   }
   function renderGear() {
@@ -278,6 +313,8 @@ async function mountPanel(request) {
     },
     destroy() {
       destroyed = true;
+      for (const handle of damageBreakouts.values()) handle.close();
+      damageBreakouts.clear();
       worker.postMessage({ type: "dispose" });
       worker.terminate();
       app.remove();

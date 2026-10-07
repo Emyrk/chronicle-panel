@@ -3,7 +3,7 @@
   "plugin": {
     "id": "github:emyrk/chronicle-panel",
     "name": "Chronicle Panel Examples",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "Reference library containing multiple trusted Chronicle custom panels.",
     "homepage": "https://github.com/Emyrk/chronicle-panel"
   },
@@ -13,25 +13,25 @@
   "artifacts": {
     "entry": {
       "path": "dist/panel.js",
-      "sha256": "355ad1403930751f4291e1291bbbadb283a2be0fcbbc74fd1ab20b1272ff22d9",
-      "size": 12162
+      "sha256": "b7234474e2cf4be92fe2eb61c8cf2664cc3cc9cd7f5685da231ac70015dabd70",
+      "size": 13811
     },
     "worker": {
       "path": "dist/worker.js",
-      "sha256": "cc15194d344dafdf7363c6494c4848aad9ad0f32aefae8aa96a1e09a06d89f9e",
+      "sha256": "0122ed9e5f5548b4b9fb7f843ad22460d61408dd7c7162813c5096b26acf1456",
       "size": 142544
     },
     "styles": {
       "path": "dist/panel.css",
-      "sha256": "13955f3c922dc3c5042e5bf9c9d318749c02141ec19a7217f6e716960e9d809a",
-      "size": 4307
+      "sha256": "1fb8da5fa0c88e867e0f77b72f68e82628408d2da8262995182a50a8b41bc7d2",
+      "size": 4208
     }
   },
   "panels": [
     {
       "id": "damage-summary",
       "name": "Example: Damage Summary",
-      "description": "Summarizes player and pet damage with expandable source and ability details.",
+      "description": "Summarizes player and pet damage with floating per-player source and ability breakouts.",
       "streams": ["damage", "unit_classification"],
       "worker": true
     },

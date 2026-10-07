@@ -52,13 +52,16 @@ header span { color: var(--muted-foreground, #a1a1aa); font-size: 11px; }
   text-align: left;
   cursor: pointer;
 }
-.damage-row-button:hover, .damage-row-button[aria-expanded="true"] {
+.damage-row-button:hover {
   background: color-mix(in srgb, currentColor 6%, transparent);
 }
 .damage-breakout {
-  padding: 4px 10px 7px 42px;
-  background: color-mix(in srgb, currentColor 3%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+  padding: 8px 12px 12px;
+  font-size: 12px;
+}
+.damage-breakout-total {
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 .damage-breakout-row {
   display: grid;
