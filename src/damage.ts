@@ -1,5 +1,5 @@
-import type { Damage, UnitClassification } from "./generated/chronicle_pb";
-import type { EncounterPayload } from "./sdk/stream";
+import type { EncounterPayload } from "@emyrk/chronicle-panel-sdk/v1/events";
+import type { Damage, UnitClassification } from "@emyrk/chronicle-panel-sdk/v1/protobuf";
 
 export interface DamagePlayer {
   name: string;

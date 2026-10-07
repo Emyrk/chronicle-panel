@@ -1,47 +1,34 @@
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/names.js
-function protoCamelCase(snakeCase) {
-  let capNext = false;
-  const b = [];
-  for (let i = 0; i < snakeCase.length; i++) {
-    let c = snakeCase.charAt(i);
-    switch (c) {
-      case "_":
-        capNext = true;
-        break;
-      case "0":
-      case "1":
-      case "2":
-      case "3":
-      case "4":
-      case "5":
-      case "6":
-      case "7":
-      case "8":
-      case "9":
-        b.push(c);
-        capNext = false;
-        break;
-      default:
-        if (capNext) {
-          capNext = false;
-          c = c.toUpperCase();
-        }
-        b.push(c);
-        break;
-    }
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/is-message.js
+function isMessage(arg, schema) {
+  const isMessage2 = arg !== null && typeof arg == "object" && "$typeName" in arg && typeof arg.$typeName == "string";
+  if (!isMessage2) {
+    return false;
   }
-  return b.join("");
+  if (schema === void 0) {
+    return true;
+  }
+  return schema.typeName === arg.$typeName;
 }
-var reservedObjectProperties = /* @__PURE__ */ new Set([
-  // names reserved by JavaScript
-  "constructor",
-  "toString",
-  "toJSON",
-  "valueOf"
-]);
-function safeObjectProperty(name) {
-  return reservedObjectProperties.has(name) ? name + "$" : name;
-}
+
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/descriptors.js
+var ScalarType;
+(function(ScalarType2) {
+  ScalarType2[ScalarType2["DOUBLE"] = 1] = "DOUBLE";
+  ScalarType2[ScalarType2["FLOAT"] = 2] = "FLOAT";
+  ScalarType2[ScalarType2["INT64"] = 3] = "INT64";
+  ScalarType2[ScalarType2["UINT64"] = 4] = "UINT64";
+  ScalarType2[ScalarType2["INT32"] = 5] = "INT32";
+  ScalarType2[ScalarType2["FIXED64"] = 6] = "FIXED64";
+  ScalarType2[ScalarType2["FIXED32"] = 7] = "FIXED32";
+  ScalarType2[ScalarType2["BOOL"] = 8] = "BOOL";
+  ScalarType2[ScalarType2["STRING"] = 9] = "STRING";
+  ScalarType2[ScalarType2["BYTES"] = 12] = "BYTES";
+  ScalarType2[ScalarType2["UINT32"] = 13] = "UINT32";
+  ScalarType2[ScalarType2["SFIXED32"] = 15] = "SFIXED32";
+  ScalarType2[ScalarType2["SFIXED64"] = 16] = "SFIXED64";
+  ScalarType2[ScalarType2["SINT32"] = 17] = "SINT32";
+  ScalarType2[ScalarType2["SINT64"] = 18] = "SINT64";
+})(ScalarType || (ScalarType = {}));
 
 // node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/wire/varint.js
 function varint64read() {
@@ -314,26 +301,6 @@ function assertUInt64String(value) {
   }
 }
 
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/descriptors.js
-var ScalarType;
-(function(ScalarType2) {
-  ScalarType2[ScalarType2["DOUBLE"] = 1] = "DOUBLE";
-  ScalarType2[ScalarType2["FLOAT"] = 2] = "FLOAT";
-  ScalarType2[ScalarType2["INT64"] = 3] = "INT64";
-  ScalarType2[ScalarType2["UINT64"] = 4] = "UINT64";
-  ScalarType2[ScalarType2["INT32"] = 5] = "INT32";
-  ScalarType2[ScalarType2["FIXED64"] = 6] = "FIXED64";
-  ScalarType2[ScalarType2["FIXED32"] = 7] = "FIXED32";
-  ScalarType2[ScalarType2["BOOL"] = 8] = "BOOL";
-  ScalarType2[ScalarType2["STRING"] = 9] = "STRING";
-  ScalarType2[ScalarType2["BYTES"] = 12] = "BYTES";
-  ScalarType2[ScalarType2["UINT32"] = 13] = "UINT32";
-  ScalarType2[ScalarType2["SFIXED32"] = 15] = "SFIXED32";
-  ScalarType2[ScalarType2["SFIXED64"] = 16] = "SFIXED64";
-  ScalarType2[ScalarType2["SINT32"] = 17] = "SINT32";
-  ScalarType2[ScalarType2["SINT64"] = 18] = "SINT64";
-})(ScalarType || (ScalarType = {}));
-
 // node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/scalar.js
 function scalarZeroValue(type, longAsString) {
   switch (type) {
@@ -375,206 +342,225 @@ function setOwn(obj, key, value) {
   }
 }
 
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/codegenv2/restore-json-names.js
-function restoreJsonNames(message) {
-  for (const f of message.field) {
-    if (!unsafeIsSetExplicit(f, "jsonName")) {
-      f.jsonName = protoCamelCase(f.name);
-    }
-  }
-  message.nestedType.forEach(restoreJsonNames);
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/guard.js
+function isObject(arg) {
+  return arg !== null && typeof arg == "object" && !Array.isArray(arg);
 }
 
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/wire/text-format.js
-function parseTextFormatEnumValue(descEnum, value) {
-  const enumValue = descEnum.values.find((v) => v.name === value);
-  if (!enumValue) {
-    throw new Error(`cannot parse ${descEnum} default value: ${value}`);
-  }
-  return enumValue.number;
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/wkt/wrappers.js
+function isWrapperDesc(messageDesc3) {
+  const f = messageDesc3.fields[0];
+  return isWrapperTypeName(messageDesc3.typeName) && f !== void 0 && f.fieldKind == "scalar" && f.name == "value" && f.number == 1;
 }
-function parseTextFormatScalarValue(type, value) {
-  switch (type) {
-    case ScalarType.STRING:
-      return value;
-    case ScalarType.BYTES: {
-      const u = unescapeBytesDefaultValue(value);
-      if (u === false) {
-        throw new Error(`cannot parse ${ScalarType[type]} default value: ${value}`);
-      }
-      return u;
-    }
-    case ScalarType.INT64:
-    case ScalarType.SFIXED64:
-    case ScalarType.SINT64:
-      return protoInt64.parse(value);
-    case ScalarType.UINT64:
-    case ScalarType.FIXED64:
-      return protoInt64.uParse(value);
-    case ScalarType.DOUBLE:
-    case ScalarType.FLOAT:
-      switch (value) {
-        case "inf":
-          return Number.POSITIVE_INFINITY;
-        case "-inf":
-          return Number.NEGATIVE_INFINITY;
-        case "nan":
-          return Number.NaN;
-        default:
-          return parseFloat(value);
-      }
-    case ScalarType.BOOL:
-      return value === "true";
-    case ScalarType.INT32:
-    case ScalarType.UINT32:
-    case ScalarType.SINT32:
-    case ScalarType.FIXED32:
-    case ScalarType.SFIXED32:
-      return parseInt(value, 10);
-  }
+var wrapperTypeNames = /* @__PURE__ */ new Set([
+  "google.protobuf.DoubleValue",
+  "google.protobuf.FloatValue",
+  "google.protobuf.Int64Value",
+  "google.protobuf.UInt64Value",
+  "google.protobuf.Int32Value",
+  "google.protobuf.UInt32Value",
+  "google.protobuf.BoolValue",
+  "google.protobuf.StringValue",
+  "google.protobuf.BytesValue"
+]);
+function isWrapperTypeName(name) {
+  return wrapperTypeNames.has(name);
 }
-function unescapeBytesDefaultValue(str) {
-  const b = [];
-  const input = {
-    tail: str,
-    c: "",
-    next() {
-      if (this.tail.length == 0) {
-        return false;
-      }
-      this.c = this.tail[0];
-      this.tail = this.tail.substring(1);
-      return true;
-    },
-    take(n) {
-      if (this.tail.length >= n) {
-        const r = this.tail.substring(0, n);
-        this.tail = this.tail.substring(n);
-        return r;
-      }
-      return false;
+
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/create.js
+var EDITION_PROTO3 = 999;
+var EDITION_PROTO2 = 998;
+var IMPLICIT = 2;
+function create(schema, init) {
+  if (isMessage(init, schema)) {
+    return init;
+  }
+  return compiledCreate(schema)(init);
+}
+var compiledCreates = /* @__PURE__ */ new WeakMap();
+function compiledCreate(desc) {
+  let compiled = compiledCreates.get(desc);
+  if (compiled === void 0) {
+    compiled = compileCreate(desc);
+    compiledCreates.set(desc, compiled);
+  }
+  return compiled;
+}
+var INIT_SINGULAR = 0;
+var INIT_LIST = 1;
+var INIT_MAP = 2;
+var INIT_ONEOF = 3;
+function compileCreate(desc) {
+  const typeName = desc.typeName;
+  const { properties, prototype } = compileInitMessage(desc);
+  return (init) => {
+    let message;
+    if (prototype !== void 0) {
+      message = Object.create(prototype);
+      message.$typeName = typeName;
+    } else {
+      message = { $typeName: typeName };
     }
-  };
-  while (input.next()) {
-    switch (input.c) {
-      case "\\":
-        if (input.next()) {
-          switch (input.c) {
-            case "\\":
-              b.push(input.c.charCodeAt(0));
-              break;
-            case "b":
-              b.push(8);
-              break;
-            case "f":
-              b.push(12);
-              break;
-            case "n":
-              b.push(10);
-              break;
-            case "r":
-              b.push(13);
-              break;
-            case "t":
-              b.push(9);
-              break;
-            case "v":
-              b.push(11);
-              break;
-            case "0":
-            case "1":
-            case "2":
-            case "3":
-            case "4":
-            case "5":
-            case "6":
-            case "7": {
-              const s = input.c;
-              const t = input.take(2);
-              if (t === false) {
-                return false;
-              }
-              const n = parseInt(s + t, 8);
-              if (Number.isNaN(n)) {
-                return false;
-              }
-              b.push(n);
-              break;
+    for (let i = 0; i < properties.length; i++) {
+      const property = properties[i];
+      const name = property.name;
+      const initValue = init === null || init === void 0 ? void 0 : init[name];
+      switch (property.kind) {
+        case INIT_SINGULAR:
+          if (initValue != null) {
+            message[name] = property.convert !== void 0 ? property.convert(initValue) : initValue;
+          } else if (property.constant !== void 0) {
+            message[name] = property.constant;
+          }
+          break;
+        case INIT_LIST:
+          message[name] = property.convert !== void 0 && Array.isArray(initValue) ? initValue.map(property.convert) : initValue !== null && initValue !== void 0 ? initValue : [];
+          break;
+        case INIT_MAP:
+          if (property.convert === void 0 || !isObject(initValue)) {
+            message[name] = initValue !== null && initValue !== void 0 ? initValue : {};
+          } else {
+            const converted = {};
+            const keys = Object.keys(initValue);
+            for (let k = 0; k < keys.length; k++) {
+              setOwn(converted, keys[k], property.convert(initValue[keys[k]]));
             }
-            case "x": {
-              const s = input.c;
-              const t = input.take(2);
-              if (t === false) {
-                return false;
-              }
-              const n = parseInt(s + t, 16);
-              if (Number.isNaN(n)) {
-                return false;
-              }
-              b.push(n);
-              break;
-            }
-            case "u": {
-              const s = input.c;
-              const t = input.take(4);
-              if (t === false) {
-                return false;
-              }
-              const n = parseInt(s + t, 16);
-              if (Number.isNaN(n)) {
-                return false;
-              }
-              const chunk = new Uint8Array(4);
-              const view = new DataView(chunk.buffer);
-              view.setInt32(0, n, true);
-              b.push(chunk[0], chunk[1], chunk[2], chunk[3]);
-              break;
-            }
-            case "U": {
-              const s = input.c;
-              const t = input.take(8);
-              if (t === false) {
-                return false;
-              }
-              const tc = protoInt64.uEnc(s + t);
-              const chunk = new Uint8Array(8);
-              const view = new DataView(chunk.buffer);
-              view.setInt32(0, tc.lo, true);
-              view.setInt32(4, tc.hi, true);
-              b.push(chunk[0], chunk[1], chunk[2], chunk[3], chunk[4], chunk[5], chunk[6], chunk[7]);
+            message[name] = converted;
+          }
+          break;
+        case INIT_ONEOF: {
+          const oneofValue = initValue;
+          if ((oneofValue === null || oneofValue === void 0 ? void 0 : oneofValue.case) != null) {
+            const convert = property.convert.get(oneofValue.case);
+            if (convert !== void 0) {
+              message[name] = {
+                case: oneofValue.case,
+                value: convert(oneofValue.value)
+              };
               break;
             }
           }
+          message[name] = { case: void 0 };
+          break;
+        }
+      }
+    }
+    return message;
+  };
+}
+function compileInitMessage(desc) {
+  var _a, _b;
+  const properties = [];
+  const prototype = {};
+  const usePrototype = needsPrototypeChain(desc);
+  for (const member of desc.members) {
+    const name = member.localName;
+    if (member.kind == "oneof") {
+      properties.push({
+        name,
+        kind: INIT_ONEOF,
+        constant: void 0,
+        convert: compileConvertOneof(member)
+      });
+      continue;
+    }
+    switch (member.fieldKind) {
+      case "message": {
+        properties.push({
+          name,
+          kind: INIT_SINGULAR,
+          constant: void 0,
+          convert: compileConvertMessage(member)
+        });
+        break;
+      }
+      case "list": {
+        properties.push({
+          name,
+          kind: INIT_LIST,
+          constant: void 0,
+          convert: member.listKind == "message" ? (_a = compileConvertMessage(member)) !== null && _a !== void 0 ? _a : ((value) => value) : member.scalar == ScalarType.BYTES ? toU8Arr : void 0
+        });
+        break;
+      }
+      case "map": {
+        properties.push({
+          name,
+          kind: INIT_MAP,
+          constant: void 0,
+          convert: member.mapKind == "message" ? (_b = compileConvertMessage(member)) !== null && _b !== void 0 ? _b : ((value) => value) : member.scalar == ScalarType.BYTES ? toU8Arr : void 0
+        });
+        break;
+      }
+      default: {
+        const zeroValue = createZeroValue(member);
+        properties.push({
+          name,
+          kind: INIT_SINGULAR,
+          constant: member.presence == IMPLICIT ? zeroValue : void 0,
+          convert: member.fieldKind == "scalar" && member.scalar == ScalarType.BYTES ? toU8Arr : void 0
+        });
+        if (usePrototype) {
+          prototype[name] = zeroValue;
         }
         break;
-      default:
-        b.push(input.c.charCodeAt(0));
+      }
     }
   }
-  return new Uint8Array(b);
+  return {
+    properties,
+    prototype: usePrototype ? prototype : void 0
+  };
 }
-
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/nested-types.js
-function* nestedTypes(desc) {
-  switch (desc.kind) {
-    case "file":
-      for (const message of desc.messages) {
-        yield message;
-        yield* nestedTypes(message);
-      }
-      yield* desc.enums;
-      yield* desc.services;
-      yield* desc.extensions;
-      break;
-    case "message":
-      for (const message of desc.nestedMessages) {
-        yield message;
-        yield* nestedTypes(message);
-      }
-      yield* desc.nestedEnums;
-      yield* desc.nestedExtensions;
-      break;
+function compileConvertOneof(oneof) {
+  const converters = /* @__PURE__ */ new Map();
+  for (const field of oneof.fields) {
+    let convert;
+    if (field.fieldKind == "message") {
+      convert = compileConvertMessage(field);
+    } else if (field.fieldKind == "scalar" && field.scalar == ScalarType.BYTES) {
+      convert = toU8Arr;
+    }
+    converters.set(field.localName, convert !== null && convert !== void 0 ? convert : ((value) => value));
   }
+  return converters;
+}
+function compileConvertMessage(field) {
+  if (field.fieldKind == "message" && !field.oneof && isWrapperDesc(field.message)) {
+    return field.message.fields[0].scalar == ScalarType.BYTES ? toU8Arr : void 0;
+  }
+  if (field.message.typeName == "google.protobuf.Struct" && field.parent.typeName !== "google.protobuf.Value") {
+    return void 0;
+  }
+  const messageDesc3 = field.message;
+  let compiled;
+  return (value) => {
+    if (!isObject(value) || isMessage(value, messageDesc3)) {
+      return value;
+    }
+    compiled !== null && compiled !== void 0 ? compiled : compiled = compiledCreate(messageDesc3);
+    return compiled(value);
+  };
+}
+function toU8Arr(value) {
+  return Array.isArray(value) ? new Uint8Array(value) : value;
+}
+function needsPrototypeChain(desc) {
+  switch (desc.file.edition) {
+    case EDITION_PROTO3:
+      return false;
+    case EDITION_PROTO2:
+      return true;
+    default:
+      return desc.fields.some((f) => f.presence != IMPLICIT && f.fieldKind != "message" && !f.oneof);
+  }
+}
+function createZeroValue(field) {
+  const defaultValue = field.getDefaultValue();
+  if (defaultValue !== void 0) {
+    return field.fieldKind == "scalar" && field.longAsString ? defaultValue.toString() : defaultValue;
+  }
+  return field.fieldKind == "scalar" ? scalarZeroValue(field.scalar, field.longAsString) : field.enum.values[0].number;
 }
 
 // node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/wire/text-encoding.js
@@ -851,6 +837,456 @@ var BinaryReader = class {
   }
 };
 
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/message.js
+var NULL_VALUE = 0;
+function localMessageMapper(field) {
+  if (usesJsonRepresentation(field)) {
+    return {
+      toMessage: (local) => wktStructToReflect(local),
+      toLocal: (message) => wktStructToLocal(message)
+    };
+  }
+  if (field.fieldKind == "message" && !field.oneof && isWrapperDesc(field.message)) {
+    const wrapperDesc = field.message;
+    const valueLocalName = wrapperDesc.fields[0].localName;
+    return {
+      toMessage: (local) => {
+        const message = create(wrapperDesc);
+        if (local !== void 0) {
+          message[valueLocalName] = local;
+        }
+        return message;
+      },
+      toLocal: (message) => message[valueLocalName]
+    };
+  }
+  const childDesc = field.message;
+  return {
+    toMessage: (local) => local === void 0 ? create(childDesc) : local,
+    toLocal: (message) => message
+  };
+}
+function usesJsonRepresentation(field) {
+  return field.message.typeName == "google.protobuf.Struct" && field.parent.typeName != "google.protobuf.Value";
+}
+function wktStructToReflect(json) {
+  const struct = {
+    $typeName: "google.protobuf.Struct",
+    fields: {}
+  };
+  if (isObject(json)) {
+    for (const k of Object.keys(json)) {
+      setOwn(struct.fields, k, wktValueToReflect(json[k]));
+    }
+  }
+  return struct;
+}
+function wktStructToLocal(val) {
+  const json = {};
+  for (const k of Object.keys(val.fields)) {
+    setOwn(json, k, wktValueToLocal(val.fields[k]));
+  }
+  return json;
+}
+function wktValueToLocal(val) {
+  switch (val.kind.case) {
+    case "structValue":
+      return wktStructToLocal(val.kind.value);
+    case "listValue":
+      return val.kind.value.values.map(wktValueToLocal);
+    case "nullValue":
+    case void 0:
+      return null;
+    default:
+      return val.kind.value;
+  }
+}
+function wktValueToReflect(json) {
+  const value = {
+    $typeName: "google.protobuf.Value",
+    kind: { case: void 0 }
+  };
+  switch (typeof json) {
+    case "number":
+      value.kind = { case: "numberValue", value: json };
+      break;
+    case "string":
+      value.kind = { case: "stringValue", value: json };
+      break;
+    case "boolean":
+      value.kind = { case: "boolValue", value: json };
+      break;
+    case "object":
+      if (json === null) {
+        value.kind = { case: "nullValue", value: NULL_VALUE };
+      } else if (Array.isArray(json)) {
+        const listValue = {
+          $typeName: "google.protobuf.ListValue",
+          values: []
+        };
+        if (Array.isArray(json)) {
+          for (const e of json) {
+            listValue.values.push(wktValueToReflect(e));
+          }
+        }
+        value.kind = {
+          case: "listValue",
+          value: listValue
+        };
+      } else {
+        value.kind = {
+          case: "structValue",
+          value: wktStructToReflect(json)
+        };
+      }
+      break;
+  }
+  return value;
+}
+
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/wire/base64-encoding.js
+var nativeSetFromBase64 = Uint8Array.prototype.setFromBase64;
+function base64Decode(base64Str) {
+  const len = base64Str.length;
+  let size = len - (len + 3 >> 2);
+  if ((len & 3) == 0 && base64Str[len - 1] == "=") {
+    size -= base64Str[len - 2] == "=" ? 2 : 1;
+  }
+  const bytes = new Uint8Array(size);
+  let written = -1;
+  if (nativeSetFromBase64) {
+    try {
+      const result = nativeSetFromBase64.call(bytes, base64Str);
+      if (result.read == len) {
+        written = result.written;
+      }
+    } catch (_a) {
+    }
+  }
+  if (written < 0) {
+    written = setFromBase64(bytes, base64Str);
+  }
+  return written == size ? bytes : bytes.subarray(0, written);
+}
+function setFromBase64(bytes, base64Str) {
+  const table = getDecodeTable();
+  let bytePos = 0, groupPos = 0, b, p = 0;
+  for (let i = 0; i < base64Str.length; i++) {
+    b = table[base64Str.charCodeAt(i)];
+    if (b === void 0) {
+      switch (base64Str[i]) {
+        // @ts-ignore TS7029: Fallthrough case in switch -- ignore instead of expect-error for compiler settings without noFallthroughCasesInSwitch: true
+        case "=":
+          groupPos = 0;
+        // reset state when padding found
+        case "\n":
+        case "\r":
+        case "	":
+        case " ":
+          continue;
+        // skip white-space, and padding
+        default:
+          throw Error("invalid base64 string");
+      }
+    }
+    switch (groupPos) {
+      case 0:
+        p = b;
+        groupPos = 1;
+        break;
+      case 1:
+        bytes[bytePos++] = p << 2 | (b & 48) >> 4;
+        p = b;
+        groupPos = 2;
+        break;
+      case 2:
+        bytes[bytePos++] = (p & 15) << 4 | (b & 60) >> 2;
+        p = b;
+        groupPos = 3;
+        break;
+      case 3:
+        bytes[bytePos++] = (p & 3) << 6 | b;
+        groupPos = 0;
+        break;
+    }
+  }
+  if (groupPos == 1)
+    throw Error("invalid base64 string");
+  return bytePos;
+}
+var nativeToBase64 = Uint8Array.prototype.toBase64;
+var encodeTableStd;
+var encodeTableUrl;
+var decodeTable;
+function getEncodeTable(encoding) {
+  if (!encodeTableStd) {
+    encodeTableStd = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
+    encodeTableUrl = encodeTableStd.slice(0, -2).concat("-", "_");
+  }
+  return encoding == "url" ? (
+    // biome-ignore lint/style/noNonNullAssertion: TS fails to narrow down
+    encodeTableUrl
+  ) : encodeTableStd;
+}
+function getDecodeTable() {
+  if (!decodeTable) {
+    decodeTable = [];
+    const encodeTable = getEncodeTable("std");
+    for (let i = 0; i < encodeTable.length; i++)
+      decodeTable[encodeTable[i].charCodeAt(0)] = i;
+    decodeTable["-".charCodeAt(0)] = encodeTable.indexOf("+");
+    decodeTable["_".charCodeAt(0)] = encodeTable.indexOf("/");
+  }
+  return decodeTable;
+}
+
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/names.js
+function protoCamelCase(snakeCase) {
+  let capNext = false;
+  const b = [];
+  for (let i = 0; i < snakeCase.length; i++) {
+    let c = snakeCase.charAt(i);
+    switch (c) {
+      case "_":
+        capNext = true;
+        break;
+      case "0":
+      case "1":
+      case "2":
+      case "3":
+      case "4":
+      case "5":
+      case "6":
+      case "7":
+      case "8":
+      case "9":
+        b.push(c);
+        capNext = false;
+        break;
+      default:
+        if (capNext) {
+          capNext = false;
+          c = c.toUpperCase();
+        }
+        b.push(c);
+        break;
+    }
+  }
+  return b.join("");
+}
+var reservedObjectProperties = /* @__PURE__ */ new Set([
+  // names reserved by JavaScript
+  "constructor",
+  "toString",
+  "toJSON",
+  "valueOf"
+]);
+function safeObjectProperty(name) {
+  return reservedObjectProperties.has(name) ? name + "$" : name;
+}
+
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/codegenv2/restore-json-names.js
+function restoreJsonNames(message) {
+  for (const f of message.field) {
+    if (!unsafeIsSetExplicit(f, "jsonName")) {
+      f.jsonName = protoCamelCase(f.name);
+    }
+  }
+  message.nestedType.forEach(restoreJsonNames);
+}
+
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/wire/text-format.js
+function parseTextFormatEnumValue(descEnum, value) {
+  const enumValue = descEnum.values.find((v) => v.name === value);
+  if (!enumValue) {
+    throw new Error(`cannot parse ${descEnum} default value: ${value}`);
+  }
+  return enumValue.number;
+}
+function parseTextFormatScalarValue(type, value) {
+  switch (type) {
+    case ScalarType.STRING:
+      return value;
+    case ScalarType.BYTES: {
+      const u = unescapeBytesDefaultValue(value);
+      if (u === false) {
+        throw new Error(`cannot parse ${ScalarType[type]} default value: ${value}`);
+      }
+      return u;
+    }
+    case ScalarType.INT64:
+    case ScalarType.SFIXED64:
+    case ScalarType.SINT64:
+      return protoInt64.parse(value);
+    case ScalarType.UINT64:
+    case ScalarType.FIXED64:
+      return protoInt64.uParse(value);
+    case ScalarType.DOUBLE:
+    case ScalarType.FLOAT:
+      switch (value) {
+        case "inf":
+          return Number.POSITIVE_INFINITY;
+        case "-inf":
+          return Number.NEGATIVE_INFINITY;
+        case "nan":
+          return Number.NaN;
+        default:
+          return parseFloat(value);
+      }
+    case ScalarType.BOOL:
+      return value === "true";
+    case ScalarType.INT32:
+    case ScalarType.UINT32:
+    case ScalarType.SINT32:
+    case ScalarType.FIXED32:
+    case ScalarType.SFIXED32:
+      return parseInt(value, 10);
+  }
+}
+function unescapeBytesDefaultValue(str) {
+  const b = [];
+  const input = {
+    tail: str,
+    c: "",
+    next() {
+      if (this.tail.length == 0) {
+        return false;
+      }
+      this.c = this.tail[0];
+      this.tail = this.tail.substring(1);
+      return true;
+    },
+    take(n) {
+      if (this.tail.length >= n) {
+        const r = this.tail.substring(0, n);
+        this.tail = this.tail.substring(n);
+        return r;
+      }
+      return false;
+    }
+  };
+  while (input.next()) {
+    switch (input.c) {
+      case "\\":
+        if (input.next()) {
+          switch (input.c) {
+            case "\\":
+              b.push(input.c.charCodeAt(0));
+              break;
+            case "b":
+              b.push(8);
+              break;
+            case "f":
+              b.push(12);
+              break;
+            case "n":
+              b.push(10);
+              break;
+            case "r":
+              b.push(13);
+              break;
+            case "t":
+              b.push(9);
+              break;
+            case "v":
+              b.push(11);
+              break;
+            case "0":
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+            case "7": {
+              const s = input.c;
+              const t = input.take(2);
+              if (t === false) {
+                return false;
+              }
+              const n = parseInt(s + t, 8);
+              if (Number.isNaN(n)) {
+                return false;
+              }
+              b.push(n);
+              break;
+            }
+            case "x": {
+              const s = input.c;
+              const t = input.take(2);
+              if (t === false) {
+                return false;
+              }
+              const n = parseInt(s + t, 16);
+              if (Number.isNaN(n)) {
+                return false;
+              }
+              b.push(n);
+              break;
+            }
+            case "u": {
+              const s = input.c;
+              const t = input.take(4);
+              if (t === false) {
+                return false;
+              }
+              const n = parseInt(s + t, 16);
+              if (Number.isNaN(n)) {
+                return false;
+              }
+              const chunk = new Uint8Array(4);
+              const view = new DataView(chunk.buffer);
+              view.setInt32(0, n, true);
+              b.push(chunk[0], chunk[1], chunk[2], chunk[3]);
+              break;
+            }
+            case "U": {
+              const s = input.c;
+              const t = input.take(8);
+              if (t === false) {
+                return false;
+              }
+              const tc = protoInt64.uEnc(s + t);
+              const chunk = new Uint8Array(8);
+              const view = new DataView(chunk.buffer);
+              view.setInt32(0, tc.lo, true);
+              view.setInt32(4, tc.hi, true);
+              b.push(chunk[0], chunk[1], chunk[2], chunk[3], chunk[4], chunk[5], chunk[6], chunk[7]);
+              break;
+            }
+          }
+        }
+        break;
+      default:
+        b.push(input.c.charCodeAt(0));
+    }
+  }
+  return new Uint8Array(b);
+}
+
+// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/nested-types.js
+function* nestedTypes(desc) {
+  switch (desc.kind) {
+    case "file":
+      for (const message of desc.messages) {
+        yield message;
+        yield* nestedTypes(message);
+      }
+      yield* desc.enums;
+      yield* desc.services;
+      yield* desc.extensions;
+      break;
+    case "message":
+      for (const message of desc.nestedMessages) {
+        yield message;
+        yield* nestedTypes(message);
+      }
+      yield* desc.nestedEnums;
+      yield* desc.nestedExtensions;
+      break;
+  }
+}
+
 // node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/registry.js
 function createFileRegistry(...args) {
   const registry = createBaseRegistry();
@@ -970,8 +1406,8 @@ function createBaseRegistry() {
     }
   };
 }
-var EDITION_PROTO2 = 998;
-var EDITION_PROTO3 = 999;
+var EDITION_PROTO22 = 998;
+var EDITION_PROTO32 = 999;
 var EDITION_UNSTABLE = 9999;
 var TYPE_STRING = 9;
 var TYPE_GROUP = 10;
@@ -983,7 +1419,7 @@ var LABEL_REQUIRED = 2;
 var JS_STRING = 1;
 var IDEMPOTENCY_UNKNOWN = 0;
 var EXPLICIT = 1;
-var IMPLICIT = 2;
+var IMPLICIT2 = 2;
 var LEGACY_REQUIRED = 3;
 var PACKED = 1;
 var DELIMITED = 2;
@@ -1462,9 +1898,9 @@ function getFileEdition(proto) {
   switch (proto.syntax) {
     case "":
     case "proto2":
-      return EDITION_PROTO2;
+      return EDITION_PROTO22;
     case "proto3":
-      return EDITION_PROTO3;
+      return EDITION_PROTO32;
     case "editions":
       if (proto.edition === EDITION_UNSTABLE) {
         return maximumEdition;
@@ -1556,7 +1992,7 @@ function getFieldPresence(proto, oneof, isExtension, parent) {
     return LEGACY_REQUIRED;
   }
   if (proto.label == LABEL_REPEATED) {
-    return IMPLICIT;
+    return IMPLICIT2;
   }
   if (!!oneof || proto.proto3Optional) {
     return EXPLICIT;
@@ -1565,7 +2001,7 @@ function getFieldPresence(proto, oneof, isExtension, parent) {
     return EXPLICIT;
   }
   const resolved = resolveFeature("fieldPresence", { proto, parent });
-  if (resolved == IMPLICIT && (proto.type == TYPE_MESSAGE || proto.type == TYPE_GROUP)) {
+  if (resolved == IMPLICIT2 && (proto.type == TYPE_MESSAGE || proto.type == TYPE_GROUP)) {
     return EXPLICIT;
   }
   return resolved;
@@ -1715,442 +2151,6 @@ function bootEnumDescriptorProto(init) {
     reservedRange: [],
     value: init.value.map((e) => Object.assign({ $typeName: "google.protobuf.EnumValueDescriptorProto" }, e))
   });
-}
-
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/wire/base64-encoding.js
-var nativeSetFromBase64 = Uint8Array.prototype.setFromBase64;
-function base64Decode(base64Str) {
-  const len = base64Str.length;
-  let size = len - (len + 3 >> 2);
-  if ((len & 3) == 0 && base64Str[len - 1] == "=") {
-    size -= base64Str[len - 2] == "=" ? 2 : 1;
-  }
-  const bytes = new Uint8Array(size);
-  let written = -1;
-  if (nativeSetFromBase64) {
-    try {
-      const result = nativeSetFromBase64.call(bytes, base64Str);
-      if (result.read == len) {
-        written = result.written;
-      }
-    } catch (_a) {
-    }
-  }
-  if (written < 0) {
-    written = setFromBase64(bytes, base64Str);
-  }
-  return written == size ? bytes : bytes.subarray(0, written);
-}
-function setFromBase64(bytes, base64Str) {
-  const table = getDecodeTable();
-  let bytePos = 0, groupPos = 0, b, p = 0;
-  for (let i = 0; i < base64Str.length; i++) {
-    b = table[base64Str.charCodeAt(i)];
-    if (b === void 0) {
-      switch (base64Str[i]) {
-        // @ts-ignore TS7029: Fallthrough case in switch -- ignore instead of expect-error for compiler settings without noFallthroughCasesInSwitch: true
-        case "=":
-          groupPos = 0;
-        // reset state when padding found
-        case "\n":
-        case "\r":
-        case "	":
-        case " ":
-          continue;
-        // skip white-space, and padding
-        default:
-          throw Error("invalid base64 string");
-      }
-    }
-    switch (groupPos) {
-      case 0:
-        p = b;
-        groupPos = 1;
-        break;
-      case 1:
-        bytes[bytePos++] = p << 2 | (b & 48) >> 4;
-        p = b;
-        groupPos = 2;
-        break;
-      case 2:
-        bytes[bytePos++] = (p & 15) << 4 | (b & 60) >> 2;
-        p = b;
-        groupPos = 3;
-        break;
-      case 3:
-        bytes[bytePos++] = (p & 3) << 6 | b;
-        groupPos = 0;
-        break;
-    }
-  }
-  if (groupPos == 1)
-    throw Error("invalid base64 string");
-  return bytePos;
-}
-var nativeToBase64 = Uint8Array.prototype.toBase64;
-var encodeTableStd;
-var encodeTableUrl;
-var decodeTable;
-function getEncodeTable(encoding) {
-  if (!encodeTableStd) {
-    encodeTableStd = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
-    encodeTableUrl = encodeTableStd.slice(0, -2).concat("-", "_");
-  }
-  return encoding == "url" ? (
-    // biome-ignore lint/style/noNonNullAssertion: TS fails to narrow down
-    encodeTableUrl
-  ) : encodeTableStd;
-}
-function getDecodeTable() {
-  if (!decodeTable) {
-    decodeTable = [];
-    const encodeTable = getEncodeTable("std");
-    for (let i = 0; i < encodeTable.length; i++)
-      decodeTable[encodeTable[i].charCodeAt(0)] = i;
-    decodeTable["-".charCodeAt(0)] = encodeTable.indexOf("+");
-    decodeTable["_".charCodeAt(0)] = encodeTable.indexOf("/");
-  }
-  return decodeTable;
-}
-
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/is-message.js
-function isMessage(arg, schema) {
-  const isMessage2 = arg !== null && typeof arg == "object" && "$typeName" in arg && typeof arg.$typeName == "string";
-  if (!isMessage2) {
-    return false;
-  }
-  if (schema === void 0) {
-    return true;
-  }
-  return schema.typeName === arg.$typeName;
-}
-
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/guard.js
-function isObject(arg) {
-  return arg !== null && typeof arg == "object" && !Array.isArray(arg);
-}
-
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/wkt/wrappers.js
-function isWrapperDesc(messageDesc3) {
-  const f = messageDesc3.fields[0];
-  return isWrapperTypeName(messageDesc3.typeName) && f !== void 0 && f.fieldKind == "scalar" && f.name == "value" && f.number == 1;
-}
-var wrapperTypeNames = /* @__PURE__ */ new Set([
-  "google.protobuf.DoubleValue",
-  "google.protobuf.FloatValue",
-  "google.protobuf.Int64Value",
-  "google.protobuf.UInt64Value",
-  "google.protobuf.Int32Value",
-  "google.protobuf.UInt32Value",
-  "google.protobuf.BoolValue",
-  "google.protobuf.StringValue",
-  "google.protobuf.BytesValue"
-]);
-function isWrapperTypeName(name) {
-  return wrapperTypeNames.has(name);
-}
-
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/create.js
-var EDITION_PROTO32 = 999;
-var EDITION_PROTO22 = 998;
-var IMPLICIT2 = 2;
-function create(schema, init) {
-  if (isMessage(init, schema)) {
-    return init;
-  }
-  return compiledCreate(schema)(init);
-}
-var compiledCreates = /* @__PURE__ */ new WeakMap();
-function compiledCreate(desc) {
-  let compiled = compiledCreates.get(desc);
-  if (compiled === void 0) {
-    compiled = compileCreate(desc);
-    compiledCreates.set(desc, compiled);
-  }
-  return compiled;
-}
-var INIT_SINGULAR = 0;
-var INIT_LIST = 1;
-var INIT_MAP = 2;
-var INIT_ONEOF = 3;
-function compileCreate(desc) {
-  const typeName = desc.typeName;
-  const { properties, prototype } = compileInitMessage(desc);
-  return (init) => {
-    let message;
-    if (prototype !== void 0) {
-      message = Object.create(prototype);
-      message.$typeName = typeName;
-    } else {
-      message = { $typeName: typeName };
-    }
-    for (let i = 0; i < properties.length; i++) {
-      const property = properties[i];
-      const name = property.name;
-      const initValue = init === null || init === void 0 ? void 0 : init[name];
-      switch (property.kind) {
-        case INIT_SINGULAR:
-          if (initValue != null) {
-            message[name] = property.convert !== void 0 ? property.convert(initValue) : initValue;
-          } else if (property.constant !== void 0) {
-            message[name] = property.constant;
-          }
-          break;
-        case INIT_LIST:
-          message[name] = property.convert !== void 0 && Array.isArray(initValue) ? initValue.map(property.convert) : initValue !== null && initValue !== void 0 ? initValue : [];
-          break;
-        case INIT_MAP:
-          if (property.convert === void 0 || !isObject(initValue)) {
-            message[name] = initValue !== null && initValue !== void 0 ? initValue : {};
-          } else {
-            const converted = {};
-            const keys = Object.keys(initValue);
-            for (let k = 0; k < keys.length; k++) {
-              setOwn(converted, keys[k], property.convert(initValue[keys[k]]));
-            }
-            message[name] = converted;
-          }
-          break;
-        case INIT_ONEOF: {
-          const oneofValue = initValue;
-          if ((oneofValue === null || oneofValue === void 0 ? void 0 : oneofValue.case) != null) {
-            const convert = property.convert.get(oneofValue.case);
-            if (convert !== void 0) {
-              message[name] = {
-                case: oneofValue.case,
-                value: convert(oneofValue.value)
-              };
-              break;
-            }
-          }
-          message[name] = { case: void 0 };
-          break;
-        }
-      }
-    }
-    return message;
-  };
-}
-function compileInitMessage(desc) {
-  var _a, _b;
-  const properties = [];
-  const prototype = {};
-  const usePrototype = needsPrototypeChain(desc);
-  for (const member of desc.members) {
-    const name = member.localName;
-    if (member.kind == "oneof") {
-      properties.push({
-        name,
-        kind: INIT_ONEOF,
-        constant: void 0,
-        convert: compileConvertOneof(member)
-      });
-      continue;
-    }
-    switch (member.fieldKind) {
-      case "message": {
-        properties.push({
-          name,
-          kind: INIT_SINGULAR,
-          constant: void 0,
-          convert: compileConvertMessage(member)
-        });
-        break;
-      }
-      case "list": {
-        properties.push({
-          name,
-          kind: INIT_LIST,
-          constant: void 0,
-          convert: member.listKind == "message" ? (_a = compileConvertMessage(member)) !== null && _a !== void 0 ? _a : ((value) => value) : member.scalar == ScalarType.BYTES ? toU8Arr : void 0
-        });
-        break;
-      }
-      case "map": {
-        properties.push({
-          name,
-          kind: INIT_MAP,
-          constant: void 0,
-          convert: member.mapKind == "message" ? (_b = compileConvertMessage(member)) !== null && _b !== void 0 ? _b : ((value) => value) : member.scalar == ScalarType.BYTES ? toU8Arr : void 0
-        });
-        break;
-      }
-      default: {
-        const zeroValue = createZeroValue(member);
-        properties.push({
-          name,
-          kind: INIT_SINGULAR,
-          constant: member.presence == IMPLICIT2 ? zeroValue : void 0,
-          convert: member.fieldKind == "scalar" && member.scalar == ScalarType.BYTES ? toU8Arr : void 0
-        });
-        if (usePrototype) {
-          prototype[name] = zeroValue;
-        }
-        break;
-      }
-    }
-  }
-  return {
-    properties,
-    prototype: usePrototype ? prototype : void 0
-  };
-}
-function compileConvertOneof(oneof) {
-  const converters = /* @__PURE__ */ new Map();
-  for (const field of oneof.fields) {
-    let convert;
-    if (field.fieldKind == "message") {
-      convert = compileConvertMessage(field);
-    } else if (field.fieldKind == "scalar" && field.scalar == ScalarType.BYTES) {
-      convert = toU8Arr;
-    }
-    converters.set(field.localName, convert !== null && convert !== void 0 ? convert : ((value) => value));
-  }
-  return converters;
-}
-function compileConvertMessage(field) {
-  if (field.fieldKind == "message" && !field.oneof && isWrapperDesc(field.message)) {
-    return field.message.fields[0].scalar == ScalarType.BYTES ? toU8Arr : void 0;
-  }
-  if (field.message.typeName == "google.protobuf.Struct" && field.parent.typeName !== "google.protobuf.Value") {
-    return void 0;
-  }
-  const messageDesc3 = field.message;
-  let compiled;
-  return (value) => {
-    if (!isObject(value) || isMessage(value, messageDesc3)) {
-      return value;
-    }
-    compiled !== null && compiled !== void 0 ? compiled : compiled = compiledCreate(messageDesc3);
-    return compiled(value);
-  };
-}
-function toU8Arr(value) {
-  return Array.isArray(value) ? new Uint8Array(value) : value;
-}
-function needsPrototypeChain(desc) {
-  switch (desc.file.edition) {
-    case EDITION_PROTO32:
-      return false;
-    case EDITION_PROTO22:
-      return true;
-    default:
-      return desc.fields.some((f) => f.presence != IMPLICIT2 && f.fieldKind != "message" && !f.oneof);
-  }
-}
-function createZeroValue(field) {
-  const defaultValue = field.getDefaultValue();
-  if (defaultValue !== void 0) {
-    return field.fieldKind == "scalar" && field.longAsString ? defaultValue.toString() : defaultValue;
-  }
-  return field.fieldKind == "scalar" ? scalarZeroValue(field.scalar, field.longAsString) : field.enum.values[0].number;
-}
-
-// node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/reflect/message.js
-var NULL_VALUE = 0;
-function localMessageMapper(field) {
-  if (usesJsonRepresentation(field)) {
-    return {
-      toMessage: (local) => wktStructToReflect(local),
-      toLocal: (message) => wktStructToLocal(message)
-    };
-  }
-  if (field.fieldKind == "message" && !field.oneof && isWrapperDesc(field.message)) {
-    const wrapperDesc = field.message;
-    const valueLocalName = wrapperDesc.fields[0].localName;
-    return {
-      toMessage: (local) => {
-        const message = create(wrapperDesc);
-        if (local !== void 0) {
-          message[valueLocalName] = local;
-        }
-        return message;
-      },
-      toLocal: (message) => message[valueLocalName]
-    };
-  }
-  const childDesc = field.message;
-  return {
-    toMessage: (local) => local === void 0 ? create(childDesc) : local,
-    toLocal: (message) => message
-  };
-}
-function usesJsonRepresentation(field) {
-  return field.message.typeName == "google.protobuf.Struct" && field.parent.typeName != "google.protobuf.Value";
-}
-function wktStructToReflect(json) {
-  const struct = {
-    $typeName: "google.protobuf.Struct",
-    fields: {}
-  };
-  if (isObject(json)) {
-    for (const k of Object.keys(json)) {
-      setOwn(struct.fields, k, wktValueToReflect(json[k]));
-    }
-  }
-  return struct;
-}
-function wktStructToLocal(val) {
-  const json = {};
-  for (const k of Object.keys(val.fields)) {
-    setOwn(json, k, wktValueToLocal(val.fields[k]));
-  }
-  return json;
-}
-function wktValueToLocal(val) {
-  switch (val.kind.case) {
-    case "structValue":
-      return wktStructToLocal(val.kind.value);
-    case "listValue":
-      return val.kind.value.values.map(wktValueToLocal);
-    case "nullValue":
-    case void 0:
-      return null;
-    default:
-      return val.kind.value;
-  }
-}
-function wktValueToReflect(json) {
-  const value = {
-    $typeName: "google.protobuf.Value",
-    kind: { case: void 0 }
-  };
-  switch (typeof json) {
-    case "number":
-      value.kind = { case: "numberValue", value: json };
-      break;
-    case "string":
-      value.kind = { case: "stringValue", value: json };
-      break;
-    case "boolean":
-      value.kind = { case: "boolValue", value: json };
-      break;
-    case "object":
-      if (json === null) {
-        value.kind = { case: "nullValue", value: NULL_VALUE };
-      } else if (Array.isArray(json)) {
-        const listValue = {
-          $typeName: "google.protobuf.ListValue",
-          values: []
-        };
-        if (Array.isArray(json)) {
-          for (const e of json) {
-            listValue.values.push(wktValueToReflect(e));
-          }
-        }
-        value.kind = {
-          case: "listValue",
-          value: listValue
-        };
-      } else {
-        value.kind = {
-          case: "structValue",
-          value: wktStructToReflect(json)
-        };
-      }
-      break;
-  }
-  return value;
 }
 
 // node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/codegenv2/message.js
@@ -2658,17 +2658,140 @@ function fileDesc(b64, imports) {
   return reg.getFile(root.name);
 }
 
+// node_modules/.pnpm/@emyrk+chronicle-panel-sdk@0.1.0_@bufbuild+protobuf@2.16.0/node_modules/@emyrk/chronicle-panel-sdk/dist/v1/eventStream.js
+var decoder = new TextDecoder();
+function readVarint(data, offset) {
+  let value = 0;
+  let shift = 0;
+  for (let i = 0; i < 10; i += 1) {
+    const byte = data[offset + i];
+    if (byte === void 0)
+      throw new Error("Unexpected end of varint");
+    value += (byte & 127) * 2 ** shift;
+    if ((byte & 128) === 0)
+      return { value, bytesRead: i + 1 };
+    shift += 7;
+  }
+  throw new Error("Varint exceeds 10 bytes");
+}
+function decodeEncounterPayloads(schema, buffer) {
+  const data = new Uint8Array(buffer);
+  const payloads = [];
+  let offset = 0;
+  while (offset < data.length) {
+    const stringLength = readVarint(data, offset);
+    offset += stringLength.bytesRead;
+    const encounterId = decoder.decode(data.subarray(offset, offset + stringLength.value));
+    offset += stringLength.value;
+    const timestamp = readVarint(data, offset);
+    offset += timestamp.bytesRead;
+    const count = readVarint(data, offset);
+    offset += count.bytesRead;
+    const dataLength = readVarint(data, offset);
+    offset += dataLength.bytesRead;
+    const payloadEnd = offset + dataLength.value;
+    if (payloadEnd > data.length)
+      throw new Error("Encounter payload exceeds stream length");
+    const events = [];
+    for (let index = 0; index < count.value; index += 1) {
+      const messageLength = readVarint(data, offset);
+      offset += messageLength.bytesRead;
+      const messageEnd = offset + messageLength.value;
+      if (messageEnd > payloadEnd)
+        throw new Error("Message exceeds encounter payload length");
+      events.push(fromBinary(schema, data.subarray(offset, messageEnd)));
+      offset = messageEnd;
+    }
+    offset = payloadEnd;
+    payloads.push({ encounterId, firstTimestampMs: timestamp.value, events });
+  }
+  return payloads;
+}
+
 // node_modules/.pnpm/@bufbuild+protobuf@2.16.0/node_modules/@bufbuild/protobuf/dist/esm/codegenv1/message.js
 function messageDesc2(file, path, ...paths) {
   return paths.reduce((acc, cur) => acc.nestedMessages[cur], file.messages[path]);
 }
 
-// src/generated/chronicle_pb.ts
-var file_chronicle = /* @__PURE__ */ fileDesc("Cg9jaHJvbmljbGUucHJvdG8SDmNocm9uaWNsZXByb3RvIj0KCVNwZWxsRGF0YRIKCgJpZBgBIAEoBRIMCgRuYW1lGAIgASgJEhYKDmF0dGFja19vdXRjb21lGAMgASgNIjkKBlRhaWxlchITCgZhbW91bnQYASABKA1IAIgBARIPCgdoaXRUeXBlGAIgASgNQgkKB19hbW91bnQiMAoNQWN0aXZpdHlFbnRyeRIMCgRndWlkGAEgASgJEhEKCWV2ZW50VHlwZRgCIAEoCSJ2CglFdmVudE1ldGESDQoFaW5kZXgYASABKAUSEwoLb2Zmc2V0TWlsbGkYAiABKAMSLwoIYWN0aXZpdHkYAyADKAsyHS5jaHJvbmljbGVwcm90by5BY3Rpdml0eUVudHJ5EhQKDGlzX3N5bnRoZXRpYxgEIAEoCCK6AgoESGVhbBInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBmNhc3RlchgDIAEoCRIOCgZ0YXJnZXQYBCABKAkSEgoKc291cmNlTmFtZRgFIAEoCRIOCgZhbW91bnQYBiABKAUSDwoHaGl0VHlwZRgHIAEoDRIxCglzcGVsbERhdGEYCCABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAIgBARImCgZzY2hvb2wYCSABKA4yFi5jaHJvbmljbGVwcm90by5TY2hvb2wSEAoIb3ZlcmhlYWwYCiABKAUSEAoIYWJzb3JiZWQYCyABKAUSJwoHc2Nob29scxgMIAMoDjIWLmNocm9uaWNsZXByb3RvLlNjaG9vbEIMCgpfc3BlbGxEYXRhIuMCCgZEYW1hZ2USJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRITCgZjYXN0ZXIYAyABKAlIAIgBARISCgpzb3VyY2VOYW1lGAQgASgJEg4KBnRhcmdldBgFIAEoCRIPCgdoaXRUeXBlGAYgASgNEg4KBmFtb3VudBgHIAEoBRImCgZzY2hvb2wYCCABKA4yFi5jaHJvbmljbGVwcm90by5TY2hvb2wSJwoHdGFpbGVycxgJIAMoCzIWLmNocm9uaWNsZXByb3RvLlRhaWxlchIxCglzcGVsbERhdGEYCiABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAYgBARIQCghvdmVya2lsbBgLIAEoBRInCgdzY2hvb2xzGAwgAygOMhYuY2hyb25pY2xlcHJvdG8uU2Nob29sQgkKB19jYXN0ZXJCDAoKX3NwZWxsRGF0YSKhAgoOUmVzb3VyY2VDaGFuZ2USJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIOCgZ0YXJnZXQYAyABKAkSDgoGYW1vdW50GAQgASgFEhQKDHJlc291cmNlVHlwZRgFIAEoCRITCgZjYXN0ZXIYBiABKAlIAIgBARIXCgpzb3VyY2VOYW1lGAcgASgJSAGIAQESEQoJZGlyZWN0aW9uGAggASgJEjEKCXNwZWxsRGF0YRgJIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgCiAEBEhQKDG92ZXJSZXNvdXJjZRgKIAEoBUIJCgdfY2FzdGVyQg0KC19zb3VyY2VOYW1lQgwKCl9zcGVsbERhdGEiqwEKC0V4dHJhQXR0YWNrEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESDgoGdGFyZ2V0GAIgASgJEg4KBmFtb3VudBgDIAEoBRISCgpzb3VyY2VOYW1lGAUgASgJEjEKCXNwZWxsRGF0YRgGIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgAiAEBQgwKCl9zcGVsbERhdGEiogEKBVNsYWluEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESDgoGdGFyZ2V0GAIgASgJEhMKBmNhc3RlchgDIAEoCUgAiAEBEjAKC2F0dHJpYnV0aW9uGAQgASgLMhYuY2hyb25pY2xlcHJvdG8uRGFtYWdlSAGIAQFCCQoHX2Nhc3RlckIOCgxfYXR0cmlidXRpb24igQEKDFJlc3VycmVjdGlvbhInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBnNvdXJjZRgCIAEoCRIOCgZ0YXJnZXQYAyABKAkSKAoFc3BlbGwYBCABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGEiPQoFU3BlbGwSDAoEbmFtZRgBIAEoCRIKCgJpZBgCIAEoBRIRCgRyYW5rGAMgASgFSACIAQFCBwoFX3JhbmsisQEKBENhc3QSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIOCgZjYXN0ZXIYAiABKAkSKgoGYWN0aW9uGAMgASgOMhouY2hyb25pY2xlcHJvdG8uQ2FzdEFjdGlvbhITCgZ0YXJnZXQYBCABKAlIAIgBARIkCgVzcGVsbBgFIAEoCzIVLmNocm9uaWNsZXByb3RvLlNwZWxsQgkKB190YXJnZXQi7gIKBEF1cmESJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIOCgZ0YXJnZXQYAiABKAkSEQoJc3BlbGxOYW1lGAMgASgJEhUKDWN1cnJlbnRBbW91bnQYBCABKAUSNAoLYXBwbGljYXRpb24YBSABKA4yHy5jaHJvbmljbGVwcm90by5BdXJhQXBwbGljYXRpb24SKAoFc3RhdGUYBiABKA4yGS5jaHJvbmljbGVwcm90by5BdXJhU3RhdGUSMQoJc3BlbGxEYXRhGAcgASgLMhkuY2hyb25pY2xlcHJvdG8uU3BlbGxEYXRhSACIAQESDgoGaXNCdWZmGAggASgIEhMKBmNhc3RlchgJIAEoCUgBiAEBEjIKCnRyYW5zaXRpb24YCiABKA4yHi5jaHJvbmljbGVwcm90by5BdXJhVHJhbnNpdGlvbkIMCgpfc3BlbGxEYXRhQgkKB19jYXN0ZXIiiAIKCEF1cmFDYXN0EicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESKAoFc3BlbGwYAiABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGESDgoGY2FzdGVyGAMgASgJEhMKBnRhcmdldBgEIAEoCUgAiAEBEg4KBmVmZmVjdBgFIAEoBRIRCglhbXBsaXR1ZGUYBiABKAUSFwoPZWZmZWN0TWlzY1ZhbHVlGAcgASgFEhIKCmR1cmF0aW9uTVMYCCABKAUSEQoJY2FwU3RhdHVzGAkgASgFEhYKDmVmZmVjdEF1cmFOYW1lGAogASgFQgkKB190YXJnZXQilwIKB1NwZWxsR28SJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRITCgZpdGVtSUQYAiABKAVIAIgBARIxCglzcGVsbERhdGEYAyABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAYgBARIOCgZjYXN0ZXIYBCABKAkSEwoGdGFyZ2V0GAUgASgJSAKIAQESDwoHbnVtSGl0cxgGIAEoBRIRCgludW1NaXNzZXMYByABKAUSGAoLY29ycHNlT3duZXIYCCABKAlIA4gBAUIJCgdfaXRlbUlEQgwKCl9zcGVsbERhdGFCCQoHX3RhcmdldEIOCgxfY29ycHNlT3duZXJKBAgJEAoinQIKClNwZWxsU3RhcnQSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRITCgZpdGVtSUQYAiABKAVIAIgBARIxCglzcGVsbERhdGEYAyABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAYgBARIOCgZjYXN0ZXIYBCABKAkSEwoGdGFyZ2V0GAUgASgJSAKIAQESEQoJY2FzdEZsYWdzGAYgASgFEhUKDWNhc3RUaW1lTWlsbGkYByABKAUSGAoQY2hhbm5lbFRpbWVNaWxsaRgIIAEoBRIRCglzcGVsbFR5cGUYCSABKAVCCQoHX2l0ZW1JREIMCgpfc3BlbGxEYXRhQgkKB190YXJnZXQinAEKCVNwZWxsRmFpbBInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBmNhc3RlchgCIAEoCRIxCglzcGVsbERhdGEYAyABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAIgBARIVCg1mYWlsZWRCeVNldmVyGAQgASgIQgwKCl9zcGVsbERhdGEiywEKElVuaXRDbGFzc2lmaWNhdGlvbhInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBnRhcmdldBgCIAEoCRIQCgh1bml0VHlwZRgDIAEoBRITCgthZmZpbGlhdGlvbhgEIAEoBRISCgVvd25lchgFIAEoCUgAiAEBEhcKCmNvbnRyb2xsZXIYBiABKAlIAYgBARIPCgdzcGVsbElkGAcgASgFQggKBl9vd25lckINCgtfY29udHJvbGxlciLCAQoGRGlzcGVsEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESDgoGY2FzdGVyGAIgASgJEg4KBnRhcmdldBgDIAEoCRIxCglzcGVsbERhdGEYBCABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAIgBARIuCgpkaXNwZWxUeXBlGAUgASgOMhouY2hyb25pY2xlcHJvdG8uRGlzcGVsVHlwZUIMCgpfc3BlbGxEYXRhIqACCg1Db21iYXRhbnRJbmZvEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESDAoEZ3VpZBgCIAEoCRIMCgRuYW1lGAMgASgJEhEKCWhlcm9DbGFzcxgEIAEoCRIMCgRyYWNlGAUgASgJEg4KBmdlbmRlchgGIAEoBRIWCglndWlsZE5hbWUYByABKAlIAIgBARIvCgRnZWFyGAggAygLMiEuY2hyb25pY2xlcHJvdG8uQ29tYmF0YW50R2VhclNsb3QSNgoHdGFsZW50cxgJIAEoCzIgLmNocm9uaWNsZXByb3RvLkNvbWJhdGFudFRhbGVudHNIAYgBAUIMCgpfZ3VpbGROYW1lQgoKCF90YWxlbnRzIt0BCglJbnRlcnJ1cHQSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIOCgZjYXN0ZXIYAiABKAkSDgoGdGFyZ2V0GAMgASgJEhIKCnNwZWxsX25hbWUYBCABKAkSFgoOZXh0cmFfc3BlbGxfaWQYBSABKAUSLAoMZXh0cmFfc2Nob29sGAYgASgOMhYuY2hyb25pY2xlcHJvdG8uU2Nob29sEi0KDWV4dHJhX3NjaG9vbHMYByADKA4yFi5jaHJvbmljbGVwcm90by5TY2hvb2wigAMKCEFic29yYmVkEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESEAoIYXR0YWNrZXIYAiABKAkSDgoGdGFyZ2V0GAMgASgJEjcKD2RhbWFnZVNwZWxsRGF0YRgEIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgAiAEBEg4KBmNhc3RlchgFIAEoCRI3Cg9hYnNvcmJTcGVsbERhdGEYBiABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAYgBARIsCgxhYnNvcmJTY2hvb2wYByABKA4yFi5jaHJvbmljbGVwcm90by5TY2hvb2wSDgoGYW1vdW50GAggASgFEhEKCWVzdGltYXRlZBgJIAEoCBIuCg5hYnNvcmJfc2Nob29scxgKIAMoDjIWLmNocm9uaWNsZXByb3RvLlNjaG9vbEISChBfZGFtYWdlU3BlbGxEYXRhQhIKEF9hYnNvcmJTcGVsbERhdGEipQQKB0NvbnN1bWUSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIRCgljb25zdW1lSWQYAiABKAkSEgoKZXZpZGVuY2VJZBgDIAEoCRIOCgZwbGF5ZXIYBCABKAkSEwoGaXRlbUlkGAUgASgFSACIAQESGAoQY2FuZGlkYXRlSXRlbUlkcxgGIAMoBRIxCglzcGVsbERhdGEYByABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAYgBARIqCgRraW5kGAggASgOMhwuY2hyb25pY2xlcHJvdG8uRXZpZGVuY2VLaW5kEjYKCmNvbmZpZGVuY2UYCSABKA4yIi5jaHJvbmljbGVwcm90by5FdmlkZW5jZUNvbmZpZGVuY2USIAoTY29uc3VtZWRBdFVuaXhNaWxsaRgKIAEoA0gCiAEBEhsKE29ic2VydmVkQXRVbml4TWlsbGkYCyABKAMSEwoGYW1vdW50GAwgASgFSAOIAQESGQoMcmVzb3VyY2VUeXBlGA0gASgJSASIAQESFAoMaXNQcm9qZWN0aW9uGA4gASgIEhUKCGl0ZW1OYW1lGA8gASgJSAWIAQFCCQoHX2l0ZW1JZEIMCgpfc3BlbGxEYXRhQhYKFF9jb25zdW1lZEF0VW5peE1pbGxpQgkKB19hbW91bnRCDwoNX3Jlc291cmNlVHlwZUILCglfaXRlbU5hbWUimAEKEUNvbWJhdGFudEdlYXJTbG90Eg4KBml0ZW1JZBgBIAEoBRIWCgllbmNoYW50SWQYAiABKAVIAIgBARIfChJ0ZW1wb3JhcnlFbmNoYW50SWQYAyABKAVIAYgBARIVCg1nZW1FbmNoYW50SWRzGAQgAygFQgwKCl9lbmNoYW50SWRCFQoTX3RlbXBvcmFyeUVuY2hhbnRJZCIyChBDb21iYXRhbnRUYWxlbnRzEg8KB3N1bW1hcnkYASADKAUSDQoFdHJlZXMYAiADKAkiWQoOQ29tcGFuaW9uU3RhdHMSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRINCgVkaXJ0eRgCIAEoBRIPCgdidWNrZXRzGAMgAygFIlAKCVJhaWRHcm91cBInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEhoKEmdyb3VwX21lbWJlcl9ndWlkcxgCIAMoCSpwCgZTY2hvb2wSCwoHVW5rbm93bhAAEggKBE5vbmUQARIMCghQaHlzaWNhbBACEggKBEhvbHkQAxIICgRGaXJlEAQSCgoGTmF0dXJlEAUSCQoFRnJvc3QQBhIKCgZTaGFkb3cQBxIKCgZBcmNhbmUQCCp0CgpDYXN0QWN0aW9uEhEKDUFjdGlvblVua25vd24QABIPCgtBY3Rpb25DYXN0cxABEhYKEkFjdGlvbkJlZ2luc1RvQ2FzdBACEhIKDkFjdGlvbkNoYW5uZWxzEAMSFgoSQWN0aW9uRmFpbHNDYXN0aW5nEAQqbQoPQXVyYUFwcGxpY2F0aW9uEhYKEkFwcGxpY2F0aW9uVW5rbm93bhAAEhQKEEFwcGxpY2F0aW9uR2FpbnMQARIUChBBcHBsaWNhdGlvbkZhZGVzEAISFgoSQXBwbGljYXRpb25SZW1vdmVkEAMqUgoJQXVyYVN0YXRlEhAKDFN0YXRlVW5rbm93bhAAEg4KClN0YXRlQWRkZWQQARIQCgxTdGF0ZVJlbW92ZWQQAhIRCg1TdGF0ZU1vZGlmaWVkEAMqigEKDkF1cmFUcmFuc2l0aW9uEhUKEVRyYW5zaXRpb25Vbmtub3duEAASFQoRVHJhbnNpdGlvbkFwcGxpZWQQARIXChNUcmFuc2l0aW9uUmVmcmVzaGVkEAISGgoWVHJhbnNpdGlvblN0YWNrQ2hhbmdlZBADEhUKEVRyYW5zaXRpb25SZW1vdmVkEAQqqgEKCkRpc3BlbFR5cGUSEgoORGlzcGVsVHlwZU5vbmUQABITCg9EaXNwZWxUeXBlTWFnaWMQARITCg9EaXNwZWxUeXBlQ3Vyc2UQAhIVChFEaXNwZWxUeXBlRGlzZWFzZRADEhQKEERpc3BlbFR5cGVQb2lzb24QBBIVChFEaXNwZWxUeXBlU3RlYWx0aBAFEhoKFkRpc3BlbFR5cGVJbnZpc2liaWxpdHkQBiriAQoMRXZpZGVuY2VLaW5kEhMKD0V2aWRlbmNlVW5rbm93bhAAEhYKEkV2aWRlbmNlRGlyZWN0SXRlbRABEhAKDEV2aWRlbmNlQ2FzdBACEhAKDEV2aWRlbmNlQXVyYRADEhAKDEV2aWRlbmNlSGVhbBAEEhQKEEV2aWRlbmNlUmVzb3VyY2UQBRISCg5FdmlkZW5jZURhbWFnZRAGEhgKFEV2aWRlbmNlQWN0aXZlQXRQdWxsEAcSFAoQRXZpZGVuY2VDb29sZG93bhAIEhUKEUV2aWRlbmNlUHJlQ29tYmF0EAkqjwEKEkV2aWRlbmNlQ29uZmlkZW5jZRIVChFDb25maWRlbmNlVW5rbm93bhAAEhQKEENvbmZpZGVuY2VEaXJlY3QQARIbChdDb25maWRlbmNlRWZmZWN0RGVyaXZlZBACEhcKE0NvbmZpZGVuY2VBbWJpZ3VvdXMQAxIWChJDb25maWRlbmNlSW5mZXJyZWQQBEIvWi1naXRodWIuY29tL0VteXJrL2Nocm9uaWNsZS9hcGkvY2hyb25pY2xlcHJvdG9iBnByb3RvMw");
+// node_modules/.pnpm/@emyrk+chronicle-panel-sdk@0.1.0_@bufbuild+protobuf@2.16.0/node_modules/@emyrk/chronicle-panel-sdk/dist/v1/protobuf/chronicle_pb.js
+var file_chronicle = /* @__PURE__ */ fileDesc("Cg9jaHJvbmljbGUucHJvdG8SDmNocm9uaWNsZXByb3RvIj0KCVNwZWxsRGF0YRIKCgJpZBgBIAEoBRIMCgRuYW1lGAIgASgJEhYKDmF0dGFja19vdXRjb21lGAMgASgNIjkKBlRhaWxlchITCgZhbW91bnQYASABKA1IAIgBARIPCgdoaXRUeXBlGAIgASgNQgkKB19hbW91bnQiMAoNQWN0aXZpdHlFbnRyeRIMCgRndWlkGAEgASgJEhEKCWV2ZW50VHlwZRgCIAEoCSJ2CglFdmVudE1ldGESDQoFaW5kZXgYASABKAUSEwoLb2Zmc2V0TWlsbGkYAiABKAMSLwoIYWN0aXZpdHkYAyADKAsyHS5jaHJvbmljbGVwcm90by5BY3Rpdml0eUVudHJ5EhQKDGlzX3N5bnRoZXRpYxgEIAEoCCK6AgoESGVhbBInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBmNhc3RlchgDIAEoCRIOCgZ0YXJnZXQYBCABKAkSEgoKc291cmNlTmFtZRgFIAEoCRIOCgZhbW91bnQYBiABKAUSDwoHaGl0VHlwZRgHIAEoDRIxCglzcGVsbERhdGEYCCABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAIgBARImCgZzY2hvb2wYCSABKA4yFi5jaHJvbmljbGVwcm90by5TY2hvb2wSEAoIb3ZlcmhlYWwYCiABKAUSEAoIYWJzb3JiZWQYCyABKAUSJwoHc2Nob29scxgMIAMoDjIWLmNocm9uaWNsZXByb3RvLlNjaG9vbEIMCgpfc3BlbGxEYXRhIuMCCgZEYW1hZ2USJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRITCgZjYXN0ZXIYAyABKAlIAIgBARISCgpzb3VyY2VOYW1lGAQgASgJEg4KBnRhcmdldBgFIAEoCRIPCgdoaXRUeXBlGAYgASgNEg4KBmFtb3VudBgHIAEoBRImCgZzY2hvb2wYCCABKA4yFi5jaHJvbmljbGVwcm90by5TY2hvb2wSJwoHdGFpbGVycxgJIAMoCzIWLmNocm9uaWNsZXByb3RvLlRhaWxlchIxCglzcGVsbERhdGEYCiABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAYgBARIQCghvdmVya2lsbBgLIAEoBRInCgdzY2hvb2xzGAwgAygOMhYuY2hyb25pY2xlcHJvdG8uU2Nob29sQgkKB19jYXN0ZXJCDAoKX3NwZWxsRGF0YSJ7CgxVbml0UG9zaXRpb24SJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIMCgR1bml0GAIgASgJEgkKAXgYAyABKAESCQoBeRgEIAEoARIOCgZtYXBfaWQYBSABKAUSDgoGZmFjaW5nGAYgASgBIoICCg1Vbml0UmVzb3VyY2VzEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESDAoEdW5pdBgCIAEoCRIWCg5jdXJyZW50X2hlYWx0aBgDIAEoAxIWCg5tYXhpbXVtX2hlYWx0aBgEIAEoAxIOCgZhYnNvcmIYBSABKAUSEgoKcG93ZXJfdHlwZRgGIAEoCRIVCg1jdXJyZW50X3Bvd2VyGAcgASgFEhUKDW1heGltdW1fcG93ZXIYCCABKAUSFAoMYXR0YWNrX3Bvd2VyGAkgASgFEhMKC3NwZWxsX3Bvd2VyGAogASgFEg0KBWFybW9yGAsgASgFIqECCg5SZXNvdXJjZUNoYW5nZRInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBnRhcmdldBgDIAEoCRIOCgZhbW91bnQYBCABKAUSFAoMcmVzb3VyY2VUeXBlGAUgASgJEhMKBmNhc3RlchgGIAEoCUgAiAEBEhcKCnNvdXJjZU5hbWUYByABKAlIAYgBARIRCglkaXJlY3Rpb24YCCABKAkSMQoJc3BlbGxEYXRhGAkgASgLMhkuY2hyb25pY2xlcHJvdG8uU3BlbGxEYXRhSAKIAQESFAoMb3ZlclJlc291cmNlGAogASgFQgkKB19jYXN0ZXJCDQoLX3NvdXJjZU5hbWVCDAoKX3NwZWxsRGF0YSKrAQoLRXh0cmFBdHRhY2sSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIOCgZ0YXJnZXQYAiABKAkSDgoGYW1vdW50GAMgASgFEhIKCnNvdXJjZU5hbWUYBSABKAkSMQoJc3BlbGxEYXRhGAYgASgLMhkuY2hyb25pY2xlcHJvdG8uU3BlbGxEYXRhSACIAQFCDAoKX3NwZWxsRGF0YSKiAQoFU2xhaW4SJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIOCgZ0YXJnZXQYAiABKAkSEwoGY2FzdGVyGAMgASgJSACIAQESMAoLYXR0cmlidXRpb24YBCABKAsyFi5jaHJvbmljbGVwcm90by5EYW1hZ2VIAYgBAUIJCgdfY2FzdGVyQg4KDF9hdHRyaWJ1dGlvbiKBAQoMUmVzdXJyZWN0aW9uEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESDgoGc291cmNlGAIgASgJEg4KBnRhcmdldBgDIAEoCRIoCgVzcGVsbBgEIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YSI9CgVTcGVsbBIMCgRuYW1lGAEgASgJEgoKAmlkGAIgASgFEhEKBHJhbmsYAyABKAVIAIgBAUIHCgVfcmFuayKxAQoEQ2FzdBInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBmNhc3RlchgCIAEoCRIqCgZhY3Rpb24YAyABKA4yGi5jaHJvbmljbGVwcm90by5DYXN0QWN0aW9uEhMKBnRhcmdldBgEIAEoCUgAiAEBEiQKBXNwZWxsGAUgASgLMhUuY2hyb25pY2xlcHJvdG8uU3BlbGxCCQoHX3RhcmdldCLuAgoEQXVyYRInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBnRhcmdldBgCIAEoCRIRCglzcGVsbE5hbWUYAyABKAkSFQoNY3VycmVudEFtb3VudBgEIAEoBRI0CgthcHBsaWNhdGlvbhgFIAEoDjIfLmNocm9uaWNsZXByb3RvLkF1cmFBcHBsaWNhdGlvbhIoCgVzdGF0ZRgGIAEoDjIZLmNocm9uaWNsZXByb3RvLkF1cmFTdGF0ZRIxCglzcGVsbERhdGEYByABKAsyGS5jaHJvbmljbGVwcm90by5TcGVsbERhdGFIAIgBARIOCgZpc0J1ZmYYCCABKAgSEwoGY2FzdGVyGAkgASgJSAGIAQESMgoKdHJhbnNpdGlvbhgKIAEoDjIeLmNocm9uaWNsZXByb3RvLkF1cmFUcmFuc2l0aW9uQgwKCl9zcGVsbERhdGFCCQoHX2Nhc3RlciKIAgoIQXVyYUNhc3QSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIoCgVzcGVsbBgCIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YRIOCgZjYXN0ZXIYAyABKAkSEwoGdGFyZ2V0GAQgASgJSACIAQESDgoGZWZmZWN0GAUgASgFEhEKCWFtcGxpdHVkZRgGIAEoBRIXCg9lZmZlY3RNaXNjVmFsdWUYByABKAUSEgoKZHVyYXRpb25NUxgIIAEoBRIRCgljYXBTdGF0dXMYCSABKAUSFgoOZWZmZWN0QXVyYU5hbWUYCiABKAVCCQoHX3RhcmdldCKXAgoHU3BlbGxHbxInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEhMKBml0ZW1JRBgCIAEoBUgAiAEBEjEKCXNwZWxsRGF0YRgDIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgBiAEBEg4KBmNhc3RlchgEIAEoCRITCgZ0YXJnZXQYBSABKAlIAogBARIPCgdudW1IaXRzGAYgASgFEhEKCW51bU1pc3NlcxgHIAEoBRIYCgtjb3Jwc2VPd25lchgIIAEoCUgDiAEBQgkKB19pdGVtSURCDAoKX3NwZWxsRGF0YUIJCgdfdGFyZ2V0Qg4KDF9jb3Jwc2VPd25lckoECAkQCiKdAgoKU3BlbGxTdGFydBInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEhMKBml0ZW1JRBgCIAEoBUgAiAEBEjEKCXNwZWxsRGF0YRgDIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgBiAEBEg4KBmNhc3RlchgEIAEoCRITCgZ0YXJnZXQYBSABKAlIAogBARIRCgljYXN0RmxhZ3MYBiABKAUSFQoNY2FzdFRpbWVNaWxsaRgHIAEoBRIYChBjaGFubmVsVGltZU1pbGxpGAggASgFEhEKCXNwZWxsVHlwZRgJIAEoBUIJCgdfaXRlbUlEQgwKCl9zcGVsbERhdGFCCQoHX3RhcmdldCKcAQoJU3BlbGxGYWlsEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESDgoGY2FzdGVyGAIgASgJEjEKCXNwZWxsRGF0YRgDIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgAiAEBEhUKDWZhaWxlZEJ5U2V2ZXIYBCABKAhCDAoKX3NwZWxsRGF0YSLLAQoSVW5pdENsYXNzaWZpY2F0aW9uEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESDgoGdGFyZ2V0GAIgASgJEhAKCHVuaXRUeXBlGAMgASgFEhMKC2FmZmlsaWF0aW9uGAQgASgFEhIKBW93bmVyGAUgASgJSACIAQESFwoKY29udHJvbGxlchgGIAEoCUgBiAEBEg8KB3NwZWxsSWQYByABKAVCCAoGX293bmVyQg0KC19jb250cm9sbGVyIsIBCgZEaXNwZWwSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIOCgZjYXN0ZXIYAiABKAkSDgoGdGFyZ2V0GAMgASgJEjEKCXNwZWxsRGF0YRgEIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgAiAEBEi4KCmRpc3BlbFR5cGUYBSABKA4yGi5jaHJvbmljbGVwcm90by5EaXNwZWxUeXBlQgwKCl9zcGVsbERhdGEioAIKDUNvbWJhdGFudEluZm8SJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIMCgRndWlkGAIgASgJEgwKBG5hbWUYAyABKAkSEQoJaGVyb0NsYXNzGAQgASgJEgwKBHJhY2UYBSABKAkSDgoGZ2VuZGVyGAYgASgFEhYKCWd1aWxkTmFtZRgHIAEoCUgAiAEBEi8KBGdlYXIYCCADKAsyIS5jaHJvbmljbGVwcm90by5Db21iYXRhbnRHZWFyU2xvdBI2Cgd0YWxlbnRzGAkgASgLMiAuY2hyb25pY2xlcHJvdG8uQ29tYmF0YW50VGFsZW50c0gBiAEBQgwKCl9ndWlsZE5hbWVCCgoIX3RhbGVudHMi3QEKCUludGVycnVwdBInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg4KBmNhc3RlchgCIAEoCRIOCgZ0YXJnZXQYAyABKAkSEgoKc3BlbGxfbmFtZRgEIAEoCRIWCg5leHRyYV9zcGVsbF9pZBgFIAEoBRIsCgxleHRyYV9zY2hvb2wYBiABKA4yFi5jaHJvbmljbGVwcm90by5TY2hvb2wSLQoNZXh0cmFfc2Nob29scxgHIAMoDjIWLmNocm9uaWNsZXByb3RvLlNjaG9vbCKAAwoIQWJzb3JiZWQSJwoEbWV0YRgBIAEoCzIZLmNocm9uaWNsZXByb3RvLkV2ZW50TWV0YRIQCghhdHRhY2tlchgCIAEoCRIOCgZ0YXJnZXQYAyABKAkSNwoPZGFtYWdlU3BlbGxEYXRhGAQgASgLMhkuY2hyb25pY2xlcHJvdG8uU3BlbGxEYXRhSACIAQESDgoGY2FzdGVyGAUgASgJEjcKD2Fic29yYlNwZWxsRGF0YRgGIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgBiAEBEiwKDGFic29yYlNjaG9vbBgHIAEoDjIWLmNocm9uaWNsZXByb3RvLlNjaG9vbBIOCgZhbW91bnQYCCABKAUSEQoJZXN0aW1hdGVkGAkgASgIEi4KDmFic29yYl9zY2hvb2xzGAogAygOMhYuY2hyb25pY2xlcHJvdG8uU2Nob29sQhIKEF9kYW1hZ2VTcGVsbERhdGFCEgoQX2Fic29yYlNwZWxsRGF0YSKlBAoHQ29uc3VtZRInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEhEKCWNvbnN1bWVJZBgCIAEoCRISCgpldmlkZW5jZUlkGAMgASgJEg4KBnBsYXllchgEIAEoCRITCgZpdGVtSWQYBSABKAVIAIgBARIYChBjYW5kaWRhdGVJdGVtSWRzGAYgAygFEjEKCXNwZWxsRGF0YRgHIAEoCzIZLmNocm9uaWNsZXByb3RvLlNwZWxsRGF0YUgBiAEBEioKBGtpbmQYCCABKA4yHC5jaHJvbmljbGVwcm90by5FdmlkZW5jZUtpbmQSNgoKY29uZmlkZW5jZRgJIAEoDjIiLmNocm9uaWNsZXByb3RvLkV2aWRlbmNlQ29uZmlkZW5jZRIgChNjb25zdW1lZEF0VW5peE1pbGxpGAogASgDSAKIAQESGwoTb2JzZXJ2ZWRBdFVuaXhNaWxsaRgLIAEoAxITCgZhbW91bnQYDCABKAVIA4gBARIZCgxyZXNvdXJjZVR5cGUYDSABKAlIBIgBARIUCgxpc1Byb2plY3Rpb24YDiABKAgSFQoIaXRlbU5hbWUYDyABKAlIBYgBAUIJCgdfaXRlbUlkQgwKCl9zcGVsbERhdGFCFgoUX2NvbnN1bWVkQXRVbml4TWlsbGlCCQoHX2Ftb3VudEIPCg1fcmVzb3VyY2VUeXBlQgsKCV9pdGVtTmFtZSKYAQoRQ29tYmF0YW50R2VhclNsb3QSDgoGaXRlbUlkGAEgASgFEhYKCWVuY2hhbnRJZBgCIAEoBUgAiAEBEh8KEnRlbXBvcmFyeUVuY2hhbnRJZBgDIAEoBUgBiAEBEhUKDWdlbUVuY2hhbnRJZHMYBCADKAVCDAoKX2VuY2hhbnRJZEIVChNfdGVtcG9yYXJ5RW5jaGFudElkIjIKEENvbWJhdGFudFRhbGVudHMSDwoHc3VtbWFyeRgBIAMoBRINCgV0cmVlcxgCIAMoCSJZCg5Db21wYW5pb25TdGF0cxInCgRtZXRhGAEgASgLMhkuY2hyb25pY2xlcHJvdG8uRXZlbnRNZXRhEg0KBWRpcnR5GAIgASgFEg8KB2J1Y2tldHMYAyADKAUiUAoJUmFpZEdyb3VwEicKBG1ldGEYASABKAsyGS5jaHJvbmljbGVwcm90by5FdmVudE1ldGESGgoSZ3JvdXBfbWVtYmVyX2d1aWRzGAIgAygJKnAKBlNjaG9vbBILCgdVbmtub3duEAASCAoETm9uZRABEgwKCFBoeXNpY2FsEAISCAoESG9seRADEggKBEZpcmUQBBIKCgZOYXR1cmUQBRIJCgVGcm9zdBAGEgoKBlNoYWRvdxAHEgoKBkFyY2FuZRAIKnQKCkNhc3RBY3Rpb24SEQoNQWN0aW9uVW5rbm93bhAAEg8KC0FjdGlvbkNhc3RzEAESFgoSQWN0aW9uQmVnaW5zVG9DYXN0EAISEgoOQWN0aW9uQ2hhbm5lbHMQAxIWChJBY3Rpb25GYWlsc0Nhc3RpbmcQBCptCg9BdXJhQXBwbGljYXRpb24SFgoSQXBwbGljYXRpb25Vbmtub3duEAASFAoQQXBwbGljYXRpb25HYWlucxABEhQKEEFwcGxpY2F0aW9uRmFkZXMQAhIWChJBcHBsaWNhdGlvblJlbW92ZWQQAypSCglBdXJhU3RhdGUSEAoMU3RhdGVVbmtub3duEAASDgoKU3RhdGVBZGRlZBABEhAKDFN0YXRlUmVtb3ZlZBACEhEKDVN0YXRlTW9kaWZpZWQQAyqKAQoOQXVyYVRyYW5zaXRpb24SFQoRVHJhbnNpdGlvblVua25vd24QABIVChFUcmFuc2l0aW9uQXBwbGllZBABEhcKE1RyYW5zaXRpb25SZWZyZXNoZWQQAhIaChZUcmFuc2l0aW9uU3RhY2tDaGFuZ2VkEAMSFQoRVHJhbnNpdGlvblJlbW92ZWQQBCqqAQoKRGlzcGVsVHlwZRISCg5EaXNwZWxUeXBlTm9uZRAAEhMKD0Rpc3BlbFR5cGVNYWdpYxABEhMKD0Rpc3BlbFR5cGVDdXJzZRACEhUKEURpc3BlbFR5cGVEaXNlYXNlEAMSFAoQRGlzcGVsVHlwZVBvaXNvbhAEEhUKEURpc3BlbFR5cGVTdGVhbHRoEAUSGgoWRGlzcGVsVHlwZUludmlzaWJpbGl0eRAGKuIBCgxFdmlkZW5jZUtpbmQSEwoPRXZpZGVuY2VVbmtub3duEAASFgoSRXZpZGVuY2VEaXJlY3RJdGVtEAESEAoMRXZpZGVuY2VDYXN0EAISEAoMRXZpZGVuY2VBdXJhEAMSEAoMRXZpZGVuY2VIZWFsEAQSFAoQRXZpZGVuY2VSZXNvdXJjZRAFEhIKDkV2aWRlbmNlRGFtYWdlEAYSGAoURXZpZGVuY2VBY3RpdmVBdFB1bGwQBxIUChBFdmlkZW5jZUNvb2xkb3duEAgSFQoRRXZpZGVuY2VQcmVDb21iYXQQCSqPAQoSRXZpZGVuY2VDb25maWRlbmNlEhUKEUNvbmZpZGVuY2VVbmtub3duEAASFAoQQ29uZmlkZW5jZURpcmVjdBABEhsKF0NvbmZpZGVuY2VFZmZlY3REZXJpdmVkEAISFwoTQ29uZmlkZW5jZUFtYmlndW91cxADEhYKEkNvbmZpZGVuY2VJbmZlcnJlZBAEQi9aLWdpdGh1Yi5jb20vRW15cmsvY2hyb25pY2xlL2FwaS9jaHJvbmljbGVwcm90b2IGcHJvdG8z");
 var DamageSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 5);
-var SpellGoSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 14);
-var UnitClassificationSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 17);
-var CombatantInfoSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 19);
+var SpellGoSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 16);
+var UnitClassificationSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 19);
+var CombatantInfoSchema = /* @__PURE__ */ messageDesc2(file_chronicle, 21);
+var School;
+(function(School2) {
+  School2[School2["Unknown"] = 0] = "Unknown";
+  School2[School2["None"] = 1] = "None";
+  School2[School2["Physical"] = 2] = "Physical";
+  School2[School2["Holy"] = 3] = "Holy";
+  School2[School2["Fire"] = 4] = "Fire";
+  School2[School2["Nature"] = 5] = "Nature";
+  School2[School2["Frost"] = 6] = "Frost";
+  School2[School2["Shadow"] = 7] = "Shadow";
+  School2[School2["Arcane"] = 8] = "Arcane";
+})(School || (School = {}));
+var CastAction;
+(function(CastAction2) {
+  CastAction2[CastAction2["ActionUnknown"] = 0] = "ActionUnknown";
+  CastAction2[CastAction2["ActionCasts"] = 1] = "ActionCasts";
+  CastAction2[CastAction2["ActionBeginsToCast"] = 2] = "ActionBeginsToCast";
+  CastAction2[CastAction2["ActionChannels"] = 3] = "ActionChannels";
+  CastAction2[CastAction2["ActionFailsCasting"] = 4] = "ActionFailsCasting";
+})(CastAction || (CastAction = {}));
+var AuraApplication;
+(function(AuraApplication2) {
+  AuraApplication2[AuraApplication2["ApplicationUnknown"] = 0] = "ApplicationUnknown";
+  AuraApplication2[AuraApplication2["ApplicationGains"] = 1] = "ApplicationGains";
+  AuraApplication2[AuraApplication2["ApplicationFades"] = 2] = "ApplicationFades";
+  AuraApplication2[AuraApplication2["ApplicationRemoved"] = 3] = "ApplicationRemoved";
+})(AuraApplication || (AuraApplication = {}));
+var AuraState;
+(function(AuraState2) {
+  AuraState2[AuraState2["StateUnknown"] = 0] = "StateUnknown";
+  AuraState2[AuraState2["StateAdded"] = 1] = "StateAdded";
+  AuraState2[AuraState2["StateRemoved"] = 2] = "StateRemoved";
+  AuraState2[AuraState2["StateModified"] = 3] = "StateModified";
+})(AuraState || (AuraState = {}));
+var AuraTransition;
+(function(AuraTransition2) {
+  AuraTransition2[AuraTransition2["TransitionUnknown"] = 0] = "TransitionUnknown";
+  AuraTransition2[AuraTransition2["TransitionApplied"] = 1] = "TransitionApplied";
+  AuraTransition2[AuraTransition2["TransitionRefreshed"] = 2] = "TransitionRefreshed";
+  AuraTransition2[AuraTransition2["TransitionStackChanged"] = 3] = "TransitionStackChanged";
+  AuraTransition2[AuraTransition2["TransitionRemoved"] = 4] = "TransitionRemoved";
+})(AuraTransition || (AuraTransition = {}));
+var DispelType;
+(function(DispelType2) {
+  DispelType2[DispelType2["DispelTypeNone"] = 0] = "DispelTypeNone";
+  DispelType2[DispelType2["DispelTypeMagic"] = 1] = "DispelTypeMagic";
+  DispelType2[DispelType2["DispelTypeCurse"] = 2] = "DispelTypeCurse";
+  DispelType2[DispelType2["DispelTypeDisease"] = 3] = "DispelTypeDisease";
+  DispelType2[DispelType2["DispelTypePoison"] = 4] = "DispelTypePoison";
+  DispelType2[DispelType2["DispelTypeStealth"] = 5] = "DispelTypeStealth";
+  DispelType2[DispelType2["DispelTypeInvisibility"] = 6] = "DispelTypeInvisibility";
+})(DispelType || (DispelType = {}));
+var EvidenceKind;
+(function(EvidenceKind2) {
+  EvidenceKind2[EvidenceKind2["EvidenceUnknown"] = 0] = "EvidenceUnknown";
+  EvidenceKind2[EvidenceKind2["EvidenceDirectItem"] = 1] = "EvidenceDirectItem";
+  EvidenceKind2[EvidenceKind2["EvidenceCast"] = 2] = "EvidenceCast";
+  EvidenceKind2[EvidenceKind2["EvidenceAura"] = 3] = "EvidenceAura";
+  EvidenceKind2[EvidenceKind2["EvidenceHeal"] = 4] = "EvidenceHeal";
+  EvidenceKind2[EvidenceKind2["EvidenceResource"] = 5] = "EvidenceResource";
+  EvidenceKind2[EvidenceKind2["EvidenceDamage"] = 6] = "EvidenceDamage";
+  EvidenceKind2[EvidenceKind2["EvidenceActiveAtPull"] = 7] = "EvidenceActiveAtPull";
+  EvidenceKind2[EvidenceKind2["EvidenceCooldown"] = 8] = "EvidenceCooldown";
+  EvidenceKind2[EvidenceKind2["EvidencePreCombat"] = 9] = "EvidencePreCombat";
+})(EvidenceKind || (EvidenceKind = {}));
+var EvidenceConfidence;
+(function(EvidenceConfidence2) {
+  EvidenceConfidence2[EvidenceConfidence2["ConfidenceUnknown"] = 0] = "ConfidenceUnknown";
+  EvidenceConfidence2[EvidenceConfidence2["ConfidenceDirect"] = 1] = "ConfidenceDirect";
+  EvidenceConfidence2[EvidenceConfidence2["ConfidenceEffectDerived"] = 2] = "ConfidenceEffectDerived";
+  EvidenceConfidence2[EvidenceConfidence2["ConfidenceAmbiguous"] = 3] = "ConfidenceAmbiguous";
+  EvidenceConfidence2[EvidenceConfidence2["ConfidenceInferred"] = 4] = "ConfidenceInferred";
+})(EvidenceConfidence || (EvidenceConfidence = {}));
 
 // src/damage.ts
 function rootOwner(guid, temporalOwners, units) {
@@ -2826,52 +2949,6 @@ function buildGearRarityRows(players, metadata) {
     }
     return { ...player, counts };
   });
-}
-
-// src/sdk/stream.ts
-var decoder = new TextDecoder();
-function readVarint(data, offset) {
-  let value = 0;
-  let shift = 0;
-  for (let i = 0; i < 10; i += 1) {
-    const byte = data[offset + i];
-    if (byte === void 0) throw new Error("Unexpected end of varint");
-    value += (byte & 127) * 2 ** shift;
-    if ((byte & 128) === 0) return { value, bytesRead: i + 1 };
-    shift += 7;
-  }
-  throw new Error("Varint exceeds 10 bytes");
-}
-function decodeEncounterPayloads(schema, buffer) {
-  const data = new Uint8Array(buffer);
-  const payloads = [];
-  let offset = 0;
-  while (offset < data.length) {
-    const stringLength = readVarint(data, offset);
-    offset += stringLength.bytesRead;
-    const encounterId = decoder.decode(data.subarray(offset, offset + stringLength.value));
-    offset += stringLength.value;
-    const timestamp = readVarint(data, offset);
-    offset += timestamp.bytesRead;
-    const count = readVarint(data, offset);
-    offset += count.bytesRead;
-    const dataLength = readVarint(data, offset);
-    offset += dataLength.bytesRead;
-    const payloadEnd = offset + dataLength.value;
-    if (payloadEnd > data.length) throw new Error("Encounter payload exceeds stream length");
-    const events = [];
-    for (let index = 0; index < count.value; index += 1) {
-      const messageLength = readVarint(data, offset);
-      offset += messageLength.bytesRead;
-      const messageEnd = offset + messageLength.value;
-      if (messageEnd > payloadEnd) throw new Error("Message exceeds encounter payload length");
-      events.push(fromBinary(schema, data.subarray(offset, messageEnd)));
-      offset = messageEnd;
-    }
-    offset = payloadEnd;
-    payloads.push({ encounterId, firstTimestampMs: timestamp.value, events });
-  }
-  return payloads;
 }
 
 // src/worker.ts

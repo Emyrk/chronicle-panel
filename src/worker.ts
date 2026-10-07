@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 
-import { CombatantInfoSchema, DamageSchema, SpellGoSchema, UnitClassificationSchema, type CombatantInfo } from "./generated/chronicle_pb";
+import { decodeEncounterPayloads, type EncounterPayload } from "@emyrk/chronicle-panel-sdk/v1/events";
+import { CombatantInfoSchema, DamageSchema, SpellGoSchema, UnitClassificationSchema, type CombatantInfo } from "@emyrk/chronicle-panel-sdk/v1/protobuf";
 import { DamageAccumulator, resolveDamageEvents, type DamageRow, type ResolvedDamageEvent } from "./damage";
 import { buildGearRarityRows, latestGearForSelectedEncounters, uniqueGearItemIds, type GearPlayerSnapshot } from "./gearRarity";
-import { decodeEncounterPayloads, type EncounterPayload } from "./sdk/stream";
 
 interface InitMessage {
   type: "init";

@@ -3,7 +3,7 @@
   "plugin": {
     "id": "github:emyrk/chronicle-panel",
     "name": "Chronicle Panel Examples",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Reference library containing multiple trusted Chronicle custom panels.",
     "homepage": "https://github.com/Emyrk/chronicle-panel"
   },
@@ -18,8 +18,8 @@
     },
     "worker": {
       "path": "dist/worker.js",
-      "sha256": "2f765aadf467da329b6e566a23e7a73c57d84e929f5534c0ae2a1fbf93050e05",
-      "size": 136136
+      "sha256": "b09340cbdb11bff4dd0e02f295e63c7a3e96f71a47c0edba2c83acdcb8948f0d",
+      "size": 141113
     },
     "styles": {
       "path": "dist/panel.css",

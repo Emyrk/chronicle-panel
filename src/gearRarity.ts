@@ -1,5 +1,5 @@
-import type { CombatantInfo } from "./generated/chronicle_pb";
-import type { EncounterPayload } from "./sdk/stream";
+import type { EncounterPayload } from "@emyrk/chronicle-panel-sdk/v1/events";
+import type { CombatantInfo } from "@emyrk/chronicle-panel-sdk/v1/protobuf";
 
 export const GEAR_RARITIES = [
   { quality: 0, key: "poor", label: "Poor", shortLabel: "Gray" },
