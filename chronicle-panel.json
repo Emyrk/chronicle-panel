@@ -3,7 +3,7 @@
   "plugin": {
     "id": "github:emyrk/chronicle-panel",
     "name": "Chronicle Panel Examples",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "description": "Reference library containing multiple trusted Chronicle custom panels.",
     "homepage": "https://github.com/Emyrk/chronicle-panel"
   },
@@ -13,18 +13,18 @@
   "artifacts": {
     "entry": {
       "path": "dist/panel.js",
-      "sha256": "b7234474e2cf4be92fe2eb61c8cf2664cc3cc9cd7f5685da231ac70015dabd70",
-      "size": 13811
+      "sha256": "7d7f7335c4bf99259563f8b4668f46e4a461181b730f85de7cffe2faa57f8634",
+      "size": 17279
     },
     "worker": {
       "path": "dist/worker.js",
-      "sha256": "0122ed9e5f5548b4b9fb7f843ad22460d61408dd7c7162813c5096b26acf1456",
-      "size": 142544
+      "sha256": "8616a192f06a22c4208291440f0a386b8ff6ad6e409fe3ef6018d5e24fff023c",
+      "size": 145181
     },
     "styles": {
       "path": "dist/panel.css",
-      "sha256": "1fb8da5fa0c88e867e0f77b72f68e82628408d2da8262995182a50a8b41bc7d2",
-      "size": 4208
+      "sha256": "993a0ebe7fe05b3457421c0e81b012a92c9a3111d88074f54864deb06931930c",
+      "size": 4790
     }
   },
   "panels": [
@@ -47,6 +47,13 @@
       "name": "Example: Replay Casts",
       "description": "Lists casts up to Chronicle's current replay timestamp.",
       "streams": ["spell_go"],
+      "worker": true
+    },
+    {
+      "id": "first-casts",
+      "name": "Example: First Casts",
+      "description": "Shows each player's first damage or heal event in every selected encounter, ordered by encounter offset.",
+      "streams": ["damage", "heal"],
       "worker": true
     }
   ]

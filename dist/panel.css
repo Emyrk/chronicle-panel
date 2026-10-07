@@ -28,7 +28,7 @@ header span { color: var(--muted-foreground, #a1a1aa); font-size: 11px; }
 .badge { border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 999px; padding: 2px 7px; }
 .badge.live { color: #34d399; }
 
-.table, .cast-list { min-height: 0; overflow: auto; scrollbar-width: thin; }
+.table, .cast-list, .first-cast-list { min-height: 0; overflow: auto; scrollbar-width: thin; }
 .damage-row {
   display: grid;
   grid-template-columns: 24px minmax(100px, 1fr) minmax(80px, 2fr) 82px;
@@ -39,7 +39,7 @@ header span { color: var(--muted-foreground, #a1a1aa); font-size: 11px; }
 }
 .rank, .value, time { color: var(--muted-foreground, #a1a1aa); font-variant-numeric: tabular-nums; }
 .value { text-align: right; color: inherit; }
-.name, .caster, .spell, .target { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name, .caster, .spell, .target, .first-cast-encounter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar { height: 5px; background: color-mix(in srgb, currentColor 8%, transparent); border-radius: 999px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: #f59e0b; border-radius: inherit; }
 
@@ -128,6 +128,25 @@ header span { color: var(--muted-foreground, #a1a1aa); font-size: 11px; }
   border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
 }
 .spell { color: #fbbf24; }
+
+.first-cast-encounter {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 10px;
+  background: var(--card, #111318);
+  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  font-weight: 600;
+}
+.first-cast-row {
+  display: grid;
+  grid-template-columns: 24px 72px minmax(90px, .8fr) minmax(120px, 1.2fr) minmax(80px, 1fr);
+  gap: 8px;
+  padding: 5px 10px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+}
+.first-cast-row.pending { opacity: .45; }
+.spell.heal { color: #34d399; }
 .target { color: var(--muted-foreground, #a1a1aa); }
 .state { margin: auto; padding: 20px; color: var(--muted-foreground, #a1a1aa); text-align: center; }
 .state.error { color: #f87171; }
