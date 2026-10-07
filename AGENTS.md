@@ -22,6 +22,7 @@ Before changing a panel:
 - `update()` receives encounter/entity selection, replay, theme, option, and size changes.
 - `destroy()` must release every resource created by `mount()`.
 - Styles run inside a ShadowRoot. Use CSS variables and DOM APIs, not Chronicle's private React/Tailwind implementation.
+- `api.breakouts.open()` creates a Chronicle-owned floating shell and returns a second isolated ShadowRoot for plugin content.
 
 ## Hard rules
 
@@ -34,7 +35,10 @@ Before changing a panel:
 - Do not create your own worker URL. Use `api.workers.create()` so Chronicle can terminate it.
 - Do not request streams again for replay ticks or ordinary `update()` calls.
 - Do not assume one mount. Multiple instances of one panel can exist simultaneously.
-- Do not leave timers, listeners, observers, workers, or large buffers alive after `destroy()`.
+- Do not create unmanaged document-level floating UI. Use `api.breakouts.open()` so Chronicle owns placement, dragging, resizing, mobile presentation, and popup behavior.
+- Do not open more than eight breakouts per mounted panel or use titles longer than 100 characters.
+- Close breakout handles during `destroy()`; `close()` is idempotent and Chronicle also closes remaining handles during host teardown.
+- Do not leave timers, listeners, observers, workers, breakouts, or large buffers alive after `destroy()`.
 - Keep `entry`, optional `worker`, and optional `styles` self-contained with no unresolved runtime-relative imports or asset references.
 - Treat each manifest artifact as `{ "path", "sha256", "size" }`. Digests are lowercase SHA-256 of the exact built bytes, and sizes are exact byte lengths.
 - Run `pnpm build` to refresh artifact digests and sizes, then commit `chronicle-panel.json` and `dist/` together after every source change intended for installation.
@@ -47,6 +51,27 @@ Before changing a panel:
 - Canonical protobuf source: `@emyrk/chronicle-panel-sdk/proto/chronicle.proto`
 
 When Chronicle's public panel contract or event schema changes, update the SDK dependency, review its release notes and type errors, then run all validation and rebuild the artifacts.
+
+## Floating breakouts
+
+Use the host API when a detail view should float above the panel:
+
+```ts
+const breakout = api.breakouts.open({
+  title: "Damage details",
+  initialPosition: { x: 200, y: 120 },
+  initialSize: { width: 420, height: 320 },
+});
+
+const content = breakout.root.host.ownerDocument.createElement("div");
+breakout.root.append(content);
+```
+
+- Chronicle owns the shell, close control, desktop dragging/resizing, mobile modal presentation, popup portal, z-index, and viewport clamping.
+- The plugin owns only the DOM inside `breakout.root`. The verified plugin stylesheet is injected into each breakout ShadowRoot.
+- Keep the returned handle in mount-local state and call `breakout.close()` during cleanup. Use `api.breakouts.closeAll()` only when intentionally closing every breakout opened by that mounted panel.
+- Use `breakout.root.host.ownerDocument` for DOM creation and `.defaultView` for owner-window APIs; do not assume the global `window` or `document` belongs to the panel.
+- The API requires `@emyrk/chronicle-panel-sdk` 0.2.0 or newer.
 
 ## Game-data lookups
 

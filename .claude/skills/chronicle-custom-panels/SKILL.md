@@ -31,6 +31,7 @@ Chronicle owns:
 - Event-stream network cache and decompression
 - Host snapshot production
 - Plugin worker lifecycle tracking
+- Floating breakout shells, popup placement, dragging/resizing, mobile presentation, and viewport bounds
 - Cleanup fallback and error presentation
 
 The plugin owns:
@@ -39,6 +40,7 @@ The plugin owns:
 - Its worker protocol
 - Stream decoding and aggregation
 - Its rendering cost
+- DOM rendered inside any breakout ShadowRoots it opens
 - Cheap reaction to replay and selection updates
 - Cleanup of everything it creates
 
@@ -66,7 +68,28 @@ In `src/panel.ts`, route using `request.panelId`. Create all mutable state insid
 
 Use `request.root` for DOM. For owner-window objects use `request.root.host.ownerDocument.defaultView`.
 
-### 3. Fetch once
+### 3. Floating breakouts
+
+Use `api.breakouts.open()` for floating detail views instead of creating fixed document-level UI:
+
+```ts
+const breakout = api.breakouts.open({
+  title: "Player details",
+  initialPosition: { x: 200, y: 120 },
+  initialSize: { width: 420, height: 320 },
+});
+
+const content = breakout.root.host.ownerDocument.createElement("div");
+breakout.root.append(content);
+```
+
+Chronicle owns the shell, close control, desktop drag/resize behavior, mobile modal, popup portal, z-index, and viewport clamping. Render only into the returned isolated ShadowRoot. The verified plugin stylesheet is injected there automatically.
+
+Keep handles in mount-local state. `close()` is idempotent; call it during cleanup, or use `api.breakouts.closeAll()` to close every breakout owned by that mounted panel. Chronicle enforces eight simultaneous breakouts per mount and 100-character titles. Use `breakout.root.host.ownerDocument` for DOM creation and its `.defaultView` for owner-window APIs, not global `window` or `document`.
+
+This API requires `@emyrk/chronicle-panel-sdk` 0.2.0 or newer.
+
+### 4. Fetch once
 
 ```ts
 const stream = await api.events.getStream("damage");
@@ -74,7 +97,7 @@ const stream = await api.events.getStream("damage");
 
 Check `api.lifecycle.signal.aborted` after awaits. The returned buffer is owned by this mount.
 
-### 4. Worker processing
+### 5. Worker processing
 
 ```ts
 const worker = api.workers.create();
@@ -83,7 +106,7 @@ worker.postMessage({ data: stream.data }, [stream.data]);
 
 Decode and aggregate in `src/worker.ts`. Prefer compact per-encounter aggregates so encounter selection can change without fetching or decoding again.
 
-### 5. Protobuf selection
+### 6. Protobuf selection
 
 Map stream names to schemas exported by `@emyrk/chronicle-panel-sdk/v1/protobuf`. Examples:
 
@@ -100,7 +123,7 @@ Map stream names to schemas exported by `@emyrk/chronicle-panel-sdk/v1/protobuf`
 
 Import generated schemas from `@emyrk/chronicle-panel-sdk/v1/protobuf` and `decodeEncounterPayloads()` from `@emyrk/chronicle-panel-sdk/v1/events`.
 
-### 6. Static game data
+### 7. Static game data
 
 Combat streams intentionally omit static metadata such as item names and rarity. Use host-mediated methods instead of private Chronicle routes:
 
@@ -110,13 +133,13 @@ const items = await api.gameData.getItemMetadata(itemIds);
 
 Collect unique positive IDs in the worker, request them as one bounded batch, then send the returned metadata back to the worker. Do not issue one request per gear slot.
 
-### 7. Pets and controlled units
+### 8. Pets and controlled units
 
 A caster GUID may identify a pet, guardian, charmed unit, or vehicle rather than a player. For owner-attributed metrics, declare `unit_classification` alongside the activity stream and decode it with `UnitClassificationSchema`.
 
 Merge classification and activity events per encounter by `EventMeta.index`. Track the latest `controller` or `owner` for each target, then fall back to `snapshot.instance.units[target].owner` when no temporal classification exists. Do not rely only on `snapshot.instance.players[caster]`, and do not import Chronicle's private classifier.
 
-### 8. Replay
+### 9. Replay
 
 `snapshot.sync.timestampMs` is an absolute Unix timestamp.
 
@@ -127,13 +150,13 @@ Choose explicitly:
 
 Never fetch or decode a stream on every replay update. Chronicle may update the timestamp frequently during playback.
 
-### 9. Selection
+### 10. Selection
 
 When `snapshot.selection.encounterIds` changes, send only the new IDs to the worker. Reuse per-encounter aggregates. Player/enemy selection can be treated similarly if the panel supports it.
 
-### 10. Cleanup
+### 11. Cleanup
 
-`destroy()` must be idempotent in effect. It must stop worker activity, detach listeners, cancel timers/animation frames, disconnect observers, release references, and remove plugin DOM. Chronicle also terminates the host-managed worker as a fallback, but the plugin must still clean up correctly.
+`destroy()` must be idempotent in effect. It must stop worker activity, close breakout handles, detach listeners, cancel timers/animation frames, disconnect observers, release references, and remove plugin DOM. Chronicle also terminates the host-managed worker and closes remaining breakouts as fallbacks, but the plugin must still clean up correctly.
 
 ## Stream framing
 
@@ -156,7 +179,8 @@ Before completion verify:
 - Replay updates are presentation-only or use an index.
 - Selection changes reuse decoded/aggregated data.
 - No unbounded DOM list is rendered.
-- Cleanup releases worker and large data.
+- Floating detail UI uses `api.breakouts.open()` and stays within the per-mount limit.
+- Cleanup closes breakout handles and releases worker and large data.
 
 ## Build contract
 
