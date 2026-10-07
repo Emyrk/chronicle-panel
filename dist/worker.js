@@ -2806,6 +2806,11 @@ function rootOwner(guid, temporalOwners, units) {
   }
   return current;
 }
+function isPlayerControlled(guid, temporalOwners, players, units) {
+  if (players[guid]) return true;
+  const ownerId = rootOwner(guid, temporalOwners, units);
+  return ownerId !== null && players[ownerId] !== void 0;
+}
 function damageAttribution(casterId, temporalOwners, players, units) {
   const directPlayer = players[casterId];
   if (directPlayer) {
@@ -2854,6 +2859,7 @@ function resolveDamageEvents(damagePayloads, classificationPayloads, players, un
         continue;
       }
       const damage = event.damage;
+      if (isPlayerControlled(damage.target, temporalOwners, players, units)) continue;
       const casterId = damage.caster || "Unknown";
       const attribution = damageAttribution(casterId, temporalOwners, players, units);
       if (!attribution) continue;
@@ -3056,6 +3062,7 @@ self.onmessage = (event) => {
         casts.push({
           encounterId: payload.encounterId,
           atMs: payload.firstTimestampMs + Number(cast.meta?.offsetMilli ?? 0n),
+          elapsedMs: Number(cast.meta?.offsetMilli ?? 0n),
           casterId: cast.caster,
           casterName: message.players[cast.caster]?.name ?? cast.caster,
           spellId: cast.spellData?.id ?? null,

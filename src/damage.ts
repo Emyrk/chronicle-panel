@@ -58,6 +58,17 @@ function rootOwner(
   return current;
 }
 
+function isPlayerControlled(
+  guid: string,
+  temporalOwners: Map<string, string>,
+  players: Record<string, DamagePlayer>,
+  units: Record<string, DamageUnit>,
+): boolean {
+  if (players[guid]) return true;
+  const ownerId = rootOwner(guid, temporalOwners, units);
+  return ownerId !== null && players[ownerId] !== undefined;
+}
+
 function damageAttribution(
   casterId: string,
   temporalOwners: Map<string, string>,
@@ -122,6 +133,7 @@ export function resolveDamageEvents(
       }
 
       const damage = event.damage!;
+      if (isPlayerControlled(damage.target, temporalOwners, players, units)) continue;
       const casterId = damage.caster || "Unknown";
       const attribution = damageAttribution(casterId, temporalOwners, players, units);
       if (!attribution) continue;

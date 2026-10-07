@@ -33,6 +33,7 @@ type WorkerRequest = InitMessage | UpdateMessage | ItemMetadataMessage | { type:
 interface CastRow {
   encounterId: string;
   atMs: number;
+  elapsedMs: number;
   casterId: string;
   casterName: string;
   spellId: number | null;
@@ -121,6 +122,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
         casts.push({
           encounterId: payload.encounterId,
           atMs: payload.firstTimestampMs + Number(cast.meta?.offsetMilli ?? 0n),
+          elapsedMs: Number(cast.meta?.offsetMilli ?? 0n),
           casterId: cast.caster,
           casterName: message.players[cast.caster]?.name ?? cast.caster,
           spellId: cast.spellData?.id ?? null,

@@ -1,3 +1,4 @@
+import { formatElapsedTime } from "./time";
 import type { DamageRow } from "./damage";
 import { GEAR_RARITIES, sortGearRarityRows, type GearRarityRow, type GearRaritySortDirection, type GearRaritySortKey } from "./gearRarity";
 import type {
@@ -10,6 +11,7 @@ import type {
 interface CastRow {
   encounterId: string;
   atMs: number;
+  elapsedMs: number;
   casterId: string;
   casterName: string;
   spellId: number | null;
@@ -204,13 +206,10 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
       return;
     }
     for (const row of rows) {
-      const encounter = snapshot.instance.encounters.find((item) => item.id === row.encounterId);
-      const encounterStart = encounter ? new Date(encounter.startTime).getTime() : row.atMs;
-      const elapsed = Math.max(0, row.atMs - encounterStart);
       const item = document.createElement("div");
       item.className = "cast-row";
       item.innerHTML = `
-        <time>${Math.floor(elapsed / 60000)}:${String(Math.floor(elapsed / 1000) % 60).padStart(2, "0")}</time>
+        <time>${formatElapsedTime(row.elapsedMs)}</time>
         <span class="caster"></span>
         <span class="spell"></span>
         <span class="target"></span>

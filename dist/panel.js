@@ -1,3 +1,10 @@
+// src/time.ts
+function formatElapsedTime(elapsedMs) {
+  const safeElapsedMs = Number.isFinite(elapsedMs) ? Math.max(0, elapsedMs) : 0;
+  const totalSeconds = Math.floor(safeElapsedMs / 1e3);
+  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
+}
+
 // src/gearRarity.ts
 var GEAR_RARITIES = [
   { quality: 0, key: "poor", label: "Poor", shortLabel: "Gray" },
@@ -193,13 +200,10 @@ async function mountPanel(request) {
       return;
     }
     for (const row of rows) {
-      const encounter = snapshot.instance.encounters.find((item2) => item2.id === row.encounterId);
-      const encounterStart = encounter ? new Date(encounter.startTime).getTime() : row.atMs;
-      const elapsed = Math.max(0, row.atMs - encounterStart);
       const item = document.createElement("div");
       item.className = "cast-row";
       item.innerHTML = `
-        <time>${Math.floor(elapsed / 6e4)}:${String(Math.floor(elapsed / 1e3) % 60).padStart(2, "0")}</time>
+        <time>${formatElapsedTime(row.elapsedMs)}</time>
         <span class="caster"></span>
         <span class="spell"></span>
         <span class="target"></span>
