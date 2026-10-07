@@ -1,9 +1,8 @@
 /// <reference lib="webworker" />
 
 import { decodeEncounterPayloads, type EncounterPayload } from "@emyrk/chronicle-panel-sdk/v1/events";
-import { CombatantInfoSchema, DamageSchema, HealSchema, SpellGoSchema, UnitClassificationSchema, type CombatantInfo } from "@emyrk/chronicle-panel-sdk/v1/protobuf";
+import { CombatantInfoSchema, DamageSchema, SpellGoSchema, UnitClassificationSchema, type CombatantInfo } from "@emyrk/chronicle-panel-sdk/v1/protobuf";
 import { DamageAccumulator, resolveDamageEvents, type DamageRow, type ResolvedDamageEvent } from "./damage";
-import { buildFirstCasts, type FirstCastEncounter } from "./firstCasts";
 import { buildGearRarityRows, latestGearForSelectedEncounters, uniqueGearItemIds, type GearPlayerSnapshot } from "./gearRarity";
 
 interface InitMessage {
@@ -12,7 +11,6 @@ interface InitMessage {
   streamType: "damage" | "spell_go" | "combatant_info";
   data: ArrayBuffer;
   classificationData?: ArrayBuffer;
-  healData?: ArrayBuffer;
   selectedEncounterIds: string[];
   players: Record<string, { name: string }>;
   units: Record<string, { name: string; owner?: string | null }>;
@@ -49,7 +47,6 @@ let sync: InitMessage["sync"] = { enabled: false, timestampMs: null };
 let damageEvents: ResolvedDamageEvent[] = [];
 let damageAccumulator = new DamageAccumulator();
 let casts: CastRow[] = [];
-let firstCasts: FirstCastEncounter[] = [];
 let gearPayloads: EncounterPayload<CombatantInfo>[] = [];
 let gearPlayers: GearPlayerSnapshot[] = [];
 let gearRequestId = 0;
@@ -78,14 +75,6 @@ function publish(): void {
 
   if (panelId === "gear-rarity") return;
 
-  if (panelId === "first-casts") {
-    self.postMessage({
-      type: "first-casts-result",
-      encounters: firstCasts.filter((encounter) => selected.has(encounter.encounterId)),
-    });
-    return;
-  }
-
   self.postMessage({
     type: "casts-result",
     rows: casts.filter((cast) => selected.has(cast.encounterId)),
@@ -105,15 +94,9 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     return;
   }
   if (message.type === "update") {
-    const selectionChanged = message.selectedEncounterIds.length !== selected.size
-      || message.selectedEncounterIds.some((id) => !selected.has(id));
     selected = new Set(message.selectedEncounterIds);
     sync = message.sync;
     if (panelId === "gear-rarity") requestGearMetadata();
-    // First casts ignore replay time; the view dims rows past the cursor.
-    else if (panelId === "first-casts") {
-      if (selectionChanged) publish();
-    }
     else publish();
     return;
   }
@@ -122,13 +105,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   selected = new Set(message.selectedEncounterIds);
   sync = message.sync;
 
-  if (panelId === "first-casts") {
-    firstCasts = buildFirstCasts(
-      decodeEncounterPayloads(DamageSchema, message.data),
-      message.healData ? decodeEncounterPayloads(HealSchema, message.healData) : [],
-      message.players,
-    );
-  } else if (message.streamType === "damage") {
+  if (message.streamType === "damage") {
     damageEvents = resolveDamageEvents(
       decodeEncounterPayloads(DamageSchema, message.data),
       message.classificationData

@@ -5,15 +5,6 @@ function formatElapsedTime(elapsedMs) {
   return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
 }
 
-// src/firstCasts.ts
-function formatOffset(offsetMs) {
-  const safe = Number.isFinite(offsetMs) ? Math.round(offsetMs) : 0;
-  const abs = Math.abs(safe);
-  const minutes = Math.floor(abs / 6e4);
-  const seconds = (abs % 6e4 / 1e3).toFixed(3).padStart(6, "0");
-  return `${safe < 0 ? "-" : ""}${minutes}:${seconds}`;
-}
-
 // src/gearRarity.ts
 var GEAR_RARITIES = [
   { quality: 0, key: "poor", label: "Poor", shortLabel: "Gray" },
@@ -60,13 +51,12 @@ async function mountPanel(request) {
   let gearRows = [];
   let gearSort = parseGearSort(snapshot.panel.option);
   let castRows = [];
-  let firstCastEncounters = [];
   let destroyed = false;
   const app = document.createElement("div");
   app.className = "chronicle-example";
   root.append(app);
   const worker = api.workers.create();
-  const streamType = panelId === "damage-summary" || panelId === "first-casts" ? "damage" : panelId === "gear-rarity" ? "combatant_info" : "spell_go";
+  const streamType = panelId === "damage-summary" ? "damage" : panelId === "gear-rarity" ? "combatant_info" : "spell_go";
   function renderError(message) {
     app.innerHTML = "";
     const error = document.createElement("div");
@@ -259,61 +249,8 @@ async function mountPanel(request) {
       list.append(item);
     }
   }
-  function renderFirstCasts() {
-    const cutoff = snapshot.sync.enabled ? snapshot.sync.timestampMs : null;
-    const encountersById = new Map(snapshot.instance.encounters.map((encounter) => [encounter.id, encounter]));
-    app.innerHTML = `
-      <header>
-        <div>
-          <strong>First Casts</strong>
-          <span>${firstCastEncounters.length} encounter(s)</span>
-        </div>
-        <span class="badge">first damage or heal</span>
-      </header>
-      <div class="first-cast-list" role="table" aria-label="First effective cast by player"></div>
-    `;
-    const list = app.querySelector(".first-cast-list");
-    if (firstCastEncounters.length === 0) {
-      list.innerHTML = '<div class="state">No player damage or healing in the selected encounters.</div>';
-      return;
-    }
-    for (const encounter of firstCastEncounters) {
-      const info = encountersById.get(encounter.encounterId);
-      const parsedStart = info ? Date.parse(info.startTime) : Number.NaN;
-      const startMs = Number.isFinite(parsedStart) ? parsedStart : encounter.firstTimestampMs;
-      const heading = document.createElement("div");
-      heading.className = "first-cast-encounter";
-      heading.setAttribute("role", "rowgroup");
-      heading.textContent = `${info?.name ?? encounter.encounterId} \xB7 ${encounter.rows.length} player(s)`;
-      list.append(heading);
-      for (const [index, row] of encounter.rows.entries()) {
-        const item = document.createElement("div");
-        item.className = `first-cast-row${cutoff != null && row.atMs > cutoff ? " pending" : ""}`;
-        item.setAttribute("role", "row");
-        item.innerHTML = `
-          <span class="rank">${index + 1}</span>
-          <time></time>
-          <span class="caster"></span>
-          <span class="spell"></span>
-          <span class="target"></span>
-        `;
-        const time = item.querySelector("time");
-        time.textContent = formatOffset(row.atMs - startMs);
-        time.dateTime = new Date(row.atMs).toISOString();
-        time.title = new Date(row.atMs).toLocaleTimeString(void 0, { hour12: false, fractionalSecondDigits: 3 });
-        item.querySelector(".caster").textContent = row.name;
-        const spell = item.querySelector(".spell");
-        spell.textContent = row.spellName;
-        spell.classList.add(row.kind);
-        spell.title = `${row.kind === "heal" ? "Heal" : "Damage"}${row.spellId ? ` \xB7 spell ${row.spellId}` : ""}`;
-        item.querySelector(".target").textContent = row.target ? `\u2192 ${snapshot.instance.units[row.target]?.name ?? snapshot.instance.players[row.target]?.name ?? row.target}` : "";
-        list.append(item);
-      }
-    }
-  }
   function render() {
     if (panelId === "damage-summary") renderDamage();
-    else if (panelId === "first-casts") renderFirstCasts();
     else if (panelId === "gear-rarity") renderGear();
     else renderCasts();
   }
@@ -330,7 +267,6 @@ async function mountPanel(request) {
       return;
     }
     if (event.data?.type === "damage-result") damageRows = event.data.rows;
-    if (event.data?.type === "first-casts-result") firstCastEncounters = event.data.encounters;
     if (event.data?.type === "casts-result") castRows = event.data.rows;
     if (event.data?.type === "gear-rarity-result") gearRows = event.data.rows;
     render();
@@ -338,16 +274,13 @@ async function mountPanel(request) {
   worker.onerror = (event) => renderError(`Plugin worker failed: ${event.message}`);
   app.innerHTML = '<div class="state">Loading Chronicle event stream\u2026</div>';
   try {
-    const [stream, classificationStream, healStream] = await Promise.all([
+    const [stream, classificationStream] = await Promise.all([
       api.events.getStream(streamType),
-      panelId === "damage-summary" ? api.events.getStream("unit_classification") : Promise.resolve(null),
-      panelId === "first-casts" ? api.events.getStream("heal") : Promise.resolve(null)
+      panelId === "damage-summary" ? api.events.getStream("unit_classification") : Promise.resolve(null)
     ]);
     if (api.lifecycle.signal.aborted || destroyed) return { destroy() {
     } };
-    const transfer = [stream.data];
-    if (classificationStream) transfer.push(classificationStream.data);
-    if (healStream) transfer.push(healStream.data);
+    const transfer = classificationStream ? [stream.data, classificationStream.data] : [stream.data];
     worker.postMessage(
       {
         type: "init",
@@ -355,7 +288,6 @@ async function mountPanel(request) {
         streamType,
         data: stream.data,
         classificationData: classificationStream?.data,
-        healData: healStream?.data,
         selectedEncounterIds: snapshot.selection.encounterIds,
         players: snapshot.instance.players,
         units: snapshot.instance.units,
@@ -378,7 +310,6 @@ async function mountPanel(request) {
         gearSort = parseGearSort(next.panel.option);
         renderGear();
       } else if (panelId === "replay-casts") renderCasts();
-      else if (panelId === "first-casts") renderFirstCasts();
     },
     destroy() {
       destroyed = true;
