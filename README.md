@@ -121,6 +121,30 @@ export default plugin;
 
 Chronicle can mount more than one instance of the same panel. Never use singleton mutable state for a mounted view.
 
+## Floating breakouts
+
+SDK 0.2.0 adds Chronicle-managed floating detail windows:
+
+```ts
+const breakout = api.breakouts.open({
+  title: "Warlock damage",
+  initialPosition: { x: 200, y: 120 },
+  initialSize: { width: 420, height: 320 },
+});
+
+const table = breakout.root.host.ownerDocument.createElement("table");
+breakout.root.append(table);
+
+// Safe to call more than once.
+breakout.close();
+```
+
+Chronicle owns the floating shell, close button, desktop dragging and resizing, mobile modal presentation, popup-window placement, bounds, and z-index. The plugin owns DOM inside the returned isolated `ShadowRoot`. The library stylesheet is injected into that root automatically.
+
+A mounted panel may open at most eight breakouts, and titles are limited to 100 characters. Keep handles in mount-local state, close them from `destroy()`, and use `api.breakouts.closeAll()` when the panel intentionally dismisses all of its floating views. Chronicle also removes remaining breakouts when the panel unmounts.
+
+Use `breakout.root.host.ownerDocument` for DOM creation and its `.defaultView` for owner-window APIs. This keeps the content correct when Chronicle renders the panel in a separate popup window.
+
 ## Event streams
 
 `api.events.getStream(type)` returns an owned `ArrayBuffer` using `chronicle-event-stream-v1`. Chronicle already fetched, decompressed, and cached the source stream. The returned bytes are a copy that the plugin can transfer safely:
@@ -195,7 +219,8 @@ A plugin only affects Chronicle while one of its panels is mounted. Plugin autho
 - Aggregate in the worker, not the main thread.
 - Keep worker results compact.
 - Use `update()` for cheap presentation changes.
-- Terminate workers and release large references in `destroy()`.
+- Terminate workers, close breakout handles, and release large references in `destroy()`.
+- Use `api.breakouts.open()` rather than unmanaged document-level floating elements.
 - Do not create global timers, mutation observers, or document listeners at module evaluation time.
 - Do not depend on Chronicle's React runtime or private source modules.
 
