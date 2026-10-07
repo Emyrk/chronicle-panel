@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vitest";
-import { CombatantInfoSchema } from "./generated/chronicle_pb";
+import { CombatantInfoSchema } from "@emyrk/chronicle-panel-sdk/v1/protobuf";
 import { buildGearRarityRows, latestGearByPlayer, latestGearForSelectedEncounters, sortGearRarityRows, uniqueGearItemIds } from "./gearRarity";
 
 function combatant(guid: string, name: string, index: number, itemIds: number[]) {

@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vitest";
-import { DamageSchema, UnitClassificationSchema } from "./generated/chronicle_pb";
+import { DamageSchema, UnitClassificationSchema } from "@emyrk/chronicle-panel-sdk/v1/protobuf";
 import { aggregateDamage, DamageAccumulator, resolveDamageEvents } from "./damage";
 
 const players = {

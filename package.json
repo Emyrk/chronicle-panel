@@ -1,6 +1,6 @@
 {
   "name": "chronicle-panel-examples",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.11.0"
+    "@bufbuild/protobuf": "^2.11.0",
+    "@emyrk/chronicle-panel-sdk": "0.1.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

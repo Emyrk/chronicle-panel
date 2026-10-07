@@ -8,8 +8,8 @@ Before changing a panel:
 
 1. Read `.claude/skills/chronicle-custom-panels/SKILL.md`.
 2. Read `chronicle-panel.json` and identify the panel ID and declared streams.
-3. Read `src/sdk/host.ts` for the exact host contract.
-4. Read `src/sdk/stream.ts` and the relevant messages in `proto/chronicle.proto`.
+3. Use `@emyrk/chronicle-panel-sdk/v1` for the exact host contract.
+4. Use the SDK's `/v1/events` and `/v1/protobuf` exports for stream decoding.
 5. Read both `src/panel.ts` and `src/worker.ts`. One library entry serves every panel in the manifest.
 
 ## Architecture
@@ -41,13 +41,12 @@ Before changing a panel:
 
 ## Canonical data sources
 
-- Canonical protobuf: `https://github.com/Emyrk/chronicle/blob/main/api/chronicleproto/chronicle.proto`
-- Local schema snapshot: `proto/chronicle.proto`
-- Generated schemas: `src/generated/chronicle_pb.ts`
-- Stream framing decoder: `src/sdk/stream.ts`
-- Host API types: `src/sdk/host.ts`
+- Host API types: `@emyrk/chronicle-panel-sdk/v1`
+- Stream framing decoder: `@emyrk/chronicle-panel-sdk/v1/events`
+- Generated protobuf schemas: `@emyrk/chronicle-panel-sdk/v1/protobuf`
+- Canonical protobuf source: `@emyrk/chronicle-panel-sdk/proto/chronicle.proto`
 
-When the schema snapshot changes, regenerate `src/generated/chronicle_pb.ts` with `buf generate`, then run all validation.
+When Chronicle's public panel contract or event schema changes, update the SDK dependency, review its release notes and type errors, then run all validation and rebuild the artifacts.
 
 ## Game-data lookups
 

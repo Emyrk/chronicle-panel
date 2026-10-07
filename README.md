@@ -63,10 +63,9 @@ src/panel.ts                         Browser view entry and lifecycle
 src/gearRarity.ts                    Gear snapshot, rarity aggregation, and sorting helpers
 src/worker.ts                        Shared worker aggregation for all example panels
 src/panel.css                        Shadow DOM styles
-src/sdk/host.ts                      Chronicle host API v1 contract
-src/sdk/stream.ts                    chronicle-event-stream-v1 framing decoder
-src/generated/chronicle_pb.ts        Generated protobuf schemas
-proto/chronicle.proto                Snapshot of the canonical event schema
+@emyrk/chronicle-panel-sdk/v1        Chronicle host API v1 contract
+@emyrk/chronicle-panel-sdk/v1/events Stream framing decoder
+@emyrk/chronicle-panel-sdk/v1/protobuf Generated protobuf schemas
 .claude/skills/chronicle-custom-panels/SKILL.md
 AGENTS.md                             Agent-first authoring guide
 ```
@@ -134,7 +133,7 @@ repeated {
 }
 ```
 
-The protobuf message type is selected by the requested stream. The canonical schema is [`api/chronicleproto/chronicle.proto`](https://github.com/Emyrk/chronicle/blob/main/api/chronicleproto/chronicle.proto). This repository keeps a snapshot under `proto/` so the examples are buildable and inspectable in isolation.
+The protobuf message type is selected by the requested stream. The published `@emyrk/chronicle-panel-sdk` package provides the framing decoder, generated schemas, and canonical `proto/chronicle.proto` source. The build bundles those dependencies into the self-contained worker artifact.
 
 Do not retain decoded event objects unnecessarily. Real logs are large. Aggregate while decoding, or build compact per-encounter indexes as the examples do.
 
@@ -201,9 +200,8 @@ Agents should read, in order:
 1. [`AGENTS.md`](AGENTS.md)
 2. [`.claude/skills/chronicle-custom-panels/SKILL.md`](.claude/skills/chronicle-custom-panels/SKILL.md)
 3. [`chronicle-panel.json`](chronicle-panel.json)
-4. [`src/sdk/host.ts`](src/sdk/host.ts)
-5. [`src/sdk/stream.ts`](src/sdk/stream.ts)
-6. The relevant message in [`proto/chronicle.proto`](proto/chronicle.proto)
-7. Existing `src/panel.ts` and `src/worker.ts` patterns
+4. The `@emyrk/chronicle-panel-sdk/v1` host contract
+5. The SDK's `/v1/events` and `/v1/protobuf` exports
+6. Existing `src/panel.ts` and `src/worker.ts` patterns
 
 The skill contains a complete checklist for adding or changing a panel.

@@ -4,7 +4,7 @@ import type {
   ChroniclePanelMountRequestV1,
   ChroniclePanelPluginV1,
   ChroniclePanelSnapshotV1,
-} from "./sdk/host";
+} from "@emyrk/chronicle-panel-sdk/v1";
 
 interface DamageRow {
   name: string;

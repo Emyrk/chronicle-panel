@@ -15,11 +15,10 @@ Read these files before editing:
 
 1. `AGENTS.md`
 2. `chronicle-panel.json`
-3. `src/sdk/host.ts`
-4. `src/sdk/stream.ts`
-5. The relevant messages and enums in `proto/chronicle.proto`
-6. `src/panel.ts`
-7. `src/worker.ts`
+3. The host contract from `@emyrk/chronicle-panel-sdk/v1`
+4. The framing decoder and schemas from the SDK's `/v1/events` and `/v1/protobuf` exports
+5. `src/panel.ts`
+6. `src/worker.ts`
 
 ## Mental model
 
@@ -86,7 +85,7 @@ Decode and aggregate in `src/worker.ts`. Prefer compact per-encounter aggregates
 
 ### 5. Protobuf selection
 
-Map stream names to canonical messages in `proto/chronicle.proto`. Examples:
+Map stream names to schemas exported by `@emyrk/chronicle-panel-sdk/v1/protobuf`. Examples:
 
 - `damage` → `Damage`
 - `heal` → `Heal`
@@ -99,7 +98,7 @@ Map stream names to canonical messages in `proto/chronicle.proto`. Examples:
 - `dispel` → `Dispel`
 - `interrupt` → `Interrupt`
 
-Use generated schemas from `src/generated/chronicle_pb.ts` with `decodeEncounterPayloads()`.
+Import generated schemas from `@emyrk/chronicle-panel-sdk/v1/protobuf` and `decodeEncounterPayloads()` from `@emyrk/chronicle-panel-sdk/v1/events`.
 
 ### 6. Static game data
 
@@ -138,7 +137,7 @@ When `snapshot.selection.encounterIds` changes, send only the new IDs to the wor
 
 ## Stream framing
 
-`chronicle-event-stream-v1` contains concatenated encounter payloads. Each payload has an encounter ID, absolute first timestamp, event count, data length, and length-delimited protobuf messages. Use `src/sdk/stream.ts`; do not parse framing ad hoc in each panel.
+`chronicle-event-stream-v1` contains concatenated encounter payloads. Each payload has an encounter ID, absolute first timestamp, event count, data length, and length-delimited protobuf messages. Use `decodeEncounterPayloads()` from `@emyrk/chronicle-panel-sdk/v1/events`; do not parse framing ad hoc in each panel.
 
 `EventMeta.offsetMilli` is relative to the encounter payload's `firstTimestampMs`. Absolute event time is:
 
@@ -179,12 +178,11 @@ dist/panel.css
 
 `panel.js` and `worker.js` must be independently self-contained ESM files. The stylesheet must not retain unresolved relative imports or asset references. `pnpm build` rejects external bundle imports, then rewrites every manifest artifact's lowercase SHA-256 digest and exact byte size from the final bytes. Review and commit `chronicle-panel.json` with `dist/`; never hand-edit digests or sizes.
 
-## Updating schemas
+## Updating the SDK
 
-When Chronicle's canonical proto changes:
+When Chronicle's public panel contract or protobuf schema changes:
 
-1. Replace `proto/chronicle.proto` from Chronicle.
-2. Run `buf generate` using `buf.gen.yaml`.
-3. Review generated schema changes.
-4. Update worker field usage and tests.
-5. Run full validation and rebuild `dist/`.
+1. Update `@emyrk/chronicle-panel-sdk` to the intended release.
+2. Review the SDK release and resulting type errors.
+3. Update panel and worker usage where required.
+4. Run full validation and rebuild `dist/`.
