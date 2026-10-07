@@ -8,11 +8,11 @@ const players = {
   "Player-2": { name: "Priest" },
 };
 
-function damage(index: number, offsetMilli: number, caster: string, amount: number, sourceName = "Attack") {
+function damage(index: number, offsetMilli: number, caster: string, amount: number, sourceName = "Attack", target = "Creature-1") {
   return create(DamageSchema, {
     meta: { index, offsetMilli: BigInt(offsetMilli) },
     caster,
-    target: "Creature-1",
+    target,
     sourceName,
     amount,
   });
@@ -109,6 +109,27 @@ describe("resolveDamageEvents", () => {
       [],
       players,
       { "Creature-2": { name: "Enemy" } },
+    );
+
+    expect(events).toEqual([]);
+  });
+
+  it("excludes friendly fire against players and their pets", () => {
+    const events = resolveDamageEvents(
+      [{
+        encounterId: "encounter-1",
+        firstTimestampMs: 1_000,
+        events: [
+          damage(1, 100, "Pet-1", 50, "Bite", "Player-2"),
+          damage(2, 200, "Pet-1", 75, "Bite", "Pet-2"),
+        ],
+      }],
+      [],
+      players,
+      {
+        "Pet-1": { name: "Wolf", owner: "Player-1" },
+        "Pet-2": { name: "Shadowfiend", owner: "Player-2" },
+      },
     );
 
     expect(events).toEqual([]);
