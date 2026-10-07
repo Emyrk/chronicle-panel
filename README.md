@@ -1,3 +1,15 @@
+<p align="center">
+  <a href="https://chronicleclassic.com/">
+    <img src=".github/assets/ChronicleLogoCenter.svg" alt="Chronicle" width="320" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://chronicleclassic.com/">chronicleclassic.com</a>
+</p>
+
+---
+
 # Chronicle custom panel examples
 
 Reference implementation and authoring documentation for trusted custom JavaScript panels in [Chronicle](https://github.com/Emyrk/chronicle).
