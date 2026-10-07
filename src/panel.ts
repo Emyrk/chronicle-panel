@@ -1,3 +1,4 @@
+import type { DamageRow } from "./damage";
 import { GEAR_RARITIES, sortGearRarityRows, type GearRarityRow, type GearRaritySortDirection, type GearRaritySortKey } from "./gearRarity";
 import type {
   ChroniclePanelInstanceV1,
@@ -5,11 +6,6 @@ import type {
   ChroniclePanelPluginV1,
   ChroniclePanelSnapshotV1,
 } from "@emyrk/chronicle-panel-sdk/v1";
-
-interface DamageRow {
-  name: string;
-  amount: number;
-}
 
 interface CastRow {
   encounterId: string;
@@ -36,6 +32,7 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
   const document = root.host.ownerDocument;
   let snapshot = request.snapshot;
   let damageRows: DamageRow[] = [];
+  let expandedDamagePlayerId: string | null = null;
   let gearRows: GearRarityRow[] = [];
   let gearSort = parseGearSort(snapshot.panel.option);
   let castRows: CastRow[] = [];
@@ -61,33 +58,60 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
   }
 
   function renderDamage(): void {
+    if (expandedDamagePlayerId && !damageRows.some((row) => row.playerId === expandedDamagePlayerId)) {
+      expandedDamagePlayerId = null;
+    }
     app.innerHTML = `
       <header>
         <div>
           <strong>Damage Summary</strong>
           <span>${snapshot.selection.encounterIds.length} encounter(s)</span>
         </div>
-        <span class="badge">plugin worker</span>
+        <span class="badge">click a player for details</span>
       </header>
       <div class="table" role="table" aria-label="Damage by player"></div>
     `;
     const table = app.querySelector<HTMLDivElement>(".table")!;
     if (damageRows.length === 0) {
-      table.innerHTML = '<div class="state">No damage in the selected encounters.</div>';
+      table.innerHTML = '<div class="state">No player damage in the selected encounters.</div>';
       return;
     }
     const max = damageRows[0]?.amount || 1;
     for (const [index, row] of damageRows.entries()) {
-      const item = document.createElement("div");
-      item.className = "damage-row";
+      const expanded = expandedDamagePlayerId === row.playerId;
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "damage-row damage-row-button";
+      item.setAttribute("aria-expanded", String(expanded));
       item.innerHTML = `
-        <span class="rank">${index + 1}</span>
+        <span class="rank">${expanded ? "▾" : "▸"} ${index + 1}</span>
         <span class="name"></span>
         <span class="bar"><i style="width:${Math.max(2, (row.amount / max) * 100)}%"></i></span>
         <span class="value">${formatNumber(row.amount)}</span>
       `;
       item.querySelector<HTMLElement>(".name")!.textContent = row.name;
+      item.addEventListener("click", () => {
+        expandedDamagePlayerId = expanded ? null : row.playerId;
+        renderDamage();
+      });
       table.append(item);
+
+      if (!expanded) continue;
+      const breakout = document.createElement("div");
+      breakout.className = "damage-breakout";
+      breakout.setAttribute("role", "table");
+      breakout.setAttribute("aria-label", `${row.name} damage breakdown`);
+      breakout.innerHTML = '<div class="damage-breakout-row damage-breakout-heading"><span>Source</span><span>Ability</span><span>Damage</span></div>';
+      for (const detail of row.breakdown) {
+        const detailRow = document.createElement("div");
+        detailRow.className = "damage-breakout-row";
+        detailRow.innerHTML = '<span class="actor"></span><span class="ability"></span><span class="value"></span>';
+        detailRow.querySelector<HTMLElement>(".actor")!.textContent = detail.actorName;
+        detailRow.querySelector<HTMLElement>(".ability")!.textContent = detail.abilityName;
+        detailRow.querySelector<HTMLElement>(".value")!.textContent = formatNumber(detail.amount);
+        breakout.append(detailRow);
+      }
+      table.append(breakout);
     }
   }
 

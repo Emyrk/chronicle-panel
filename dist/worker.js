@@ -2806,14 +2806,20 @@ function rootOwner(guid, temporalOwners, units) {
   }
   return current;
 }
-function entityName(casterId, temporalOwners, players, units) {
-  const directPlayer = players[casterId]?.name;
-  if (directPlayer) return directPlayer;
-  const ownerId = rootOwner(casterId, temporalOwners, units);
-  if (ownerId) {
-    return players[ownerId]?.name ?? units[ownerId]?.name ?? ownerId;
+function damageAttribution(casterId, temporalOwners, players, units) {
+  const directPlayer = players[casterId];
+  if (directPlayer) {
+    return { playerId: casterId, name: directPlayer.name, actorId: casterId, actorName: directPlayer.name };
   }
-  return units[casterId]?.name ?? (casterId || "Unknown");
+  const ownerId = rootOwner(casterId, temporalOwners, units);
+  const owner = ownerId ? players[ownerId] : void 0;
+  if (!owner || !ownerId) return null;
+  return {
+    playerId: ownerId,
+    name: owner.name,
+    actorId: casterId,
+    actorName: units[casterId]?.name ?? casterId
+  };
 }
 function resolveDamageEvents(damagePayloads, classificationPayloads, players, units) {
   const classificationsByEncounter = new Map(
@@ -2849,10 +2855,13 @@ function resolveDamageEvents(damagePayloads, classificationPayloads, players, un
       }
       const damage = event.damage;
       const casterId = damage.caster || "Unknown";
+      const attribution = damageAttribution(casterId, temporalOwners, players, units);
+      if (!attribution) continue;
       resolved.push({
         encounterId: damagePayload.encounterId,
         atMs: damagePayload.firstTimestampMs + Number(damage.meta?.offsetMilli ?? 0n),
-        name: entityName(casterId, temporalOwners, players, units),
+        ...attribution,
+        abilityName: damage.sourceName || "Unknown ability",
         amount: damage.amount
       });
     }
@@ -2860,7 +2869,12 @@ function resolveDamageEvents(damagePayloads, classificationPayloads, players, un
   return resolved.sort((a, b) => a.atMs - b.atMs);
 }
 function damageRows(totals) {
-  return [...totals.entries()].map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount);
+  return [...totals.values()].map((total) => ({
+    playerId: total.playerId,
+    name: total.name,
+    amount: total.amount,
+    breakdown: [...total.breakdown.values()].sort((a, b) => b.amount - a.amount)
+  })).sort((a, b) => b.amount - a.amount);
 }
 var DamageAccumulator = class {
   cursor = 0;
@@ -2880,7 +2894,25 @@ var DamageAccumulator = class {
       const event = events[this.cursor];
       if (cutoffMs !== null && event.atMs > cutoffMs) break;
       if (selectedEncounterIds.has(event.encounterId)) {
-        this.totals.set(event.name, (this.totals.get(event.name) ?? 0) + event.amount);
+        let total = this.totals.get(event.playerId);
+        if (!total) {
+          total = {
+            playerId: event.playerId,
+            name: event.name,
+            amount: 0,
+            breakdown: /* @__PURE__ */ new Map()
+          };
+          this.totals.set(event.playerId, total);
+        }
+        total.amount += event.amount;
+        const breakdownKey = `${event.actorId}\0${event.abilityName}`;
+        const breakdown = total.breakdown.get(breakdownKey);
+        if (breakdown) breakdown.amount += event.amount;
+        else total.breakdown.set(breakdownKey, {
+          actorName: event.actorName,
+          abilityName: event.abilityName,
+          amount: event.amount
+        });
       }
       this.cursor += 1;
     }
