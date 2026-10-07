@@ -1,5 +1,6 @@
 import { formatElapsedTime } from "./time";
 import type { DamageRow } from "./damage";
+import { formatOffset, type FirstCastEncounter } from "./firstCasts";
 import { GEAR_RARITIES, sortGearRarityRows, type GearRarityRow, type GearRaritySortDirection, type GearRaritySortKey } from "./gearRarity";
 import {
   CUSTOM_PANEL_BREAKOUT_TITLE_MAX_LENGTH,
@@ -41,6 +42,7 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
   let gearRows: GearRarityRow[] = [];
   let gearSort = parseGearSort(snapshot.panel.option);
   let castRows: CastRow[] = [];
+  let firstCastEncounters: FirstCastEncounter[] = [];
   let destroyed = false;
 
   const app = document.createElement("div");
@@ -48,7 +50,7 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
   root.append(app);
 
   const worker = api.workers.create();
-  const streamType = panelId === "damage-summary"
+  const streamType = panelId === "damage-summary" || panelId === "first-casts"
     ? "damage"
     : panelId === "gear-rarity"
       ? "combatant_info"
@@ -258,8 +260,66 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
     }
   }
 
+  function renderFirstCasts(): void {
+    const cutoff = snapshot.sync.enabled ? snapshot.sync.timestampMs : null;
+    const encountersById = new Map(snapshot.instance.encounters.map((encounter) => [encounter.id, encounter]));
+    app.innerHTML = `
+      <header>
+        <div>
+          <strong>First Casts</strong>
+          <span>${firstCastEncounters.length} encounter(s)</span>
+        </div>
+        <span class="badge">first damage or heal</span>
+      </header>
+      <div class="first-cast-list" role="table" aria-label="First effective cast by player"></div>
+    `;
+    const list = app.querySelector<HTMLDivElement>(".first-cast-list")!;
+    if (firstCastEncounters.length === 0) {
+      list.innerHTML = '<div class="state">No player damage or healing in the selected encounters.</div>';
+      return;
+    }
+    for (const encounter of firstCastEncounters) {
+      const info = encountersById.get(encounter.encounterId);
+      const parsedStart = info ? Date.parse(info.startTime) : Number.NaN;
+      const startMs = Number.isFinite(parsedStart) ? parsedStart : encounter.firstTimestampMs;
+
+      const heading = document.createElement("div");
+      heading.className = "first-cast-encounter";
+      heading.setAttribute("role", "rowgroup");
+      heading.textContent = `${info?.name ?? encounter.encounterId} · ${encounter.rows.length} player(s)`;
+      list.append(heading);
+
+      for (const [index, row] of encounter.rows.entries()) {
+        const item = document.createElement("div");
+        item.className = `first-cast-row${cutoff != null && row.atMs > cutoff ? " pending" : ""}`;
+        item.setAttribute("role", "row");
+        item.innerHTML = `
+          <span class="rank">${index + 1}</span>
+          <time></time>
+          <span class="caster"></span>
+          <span class="spell"></span>
+          <span class="target"></span>
+        `;
+        const time = item.querySelector<HTMLTimeElement>("time")!;
+        time.textContent = formatOffset(row.atMs - startMs);
+        time.dateTime = new Date(row.atMs).toISOString();
+        time.title = new Date(row.atMs).toLocaleTimeString(undefined, { hour12: false, fractionalSecondDigits: 3 });
+        item.querySelector<HTMLElement>(".caster")!.textContent = row.name;
+        const spell = item.querySelector<HTMLElement>(".spell")!;
+        spell.textContent = row.spellName;
+        spell.classList.add(row.kind);
+        spell.title = `${row.kind === "heal" ? "Heal" : "Damage"}${row.spellId ? ` · spell ${row.spellId}` : ""}`;
+        item.querySelector<HTMLElement>(".target")!.textContent = row.target
+          ? `→ ${snapshot.instance.units[row.target]?.name ?? snapshot.instance.players[row.target]?.name ?? row.target}`
+          : "";
+        list.append(item);
+      }
+    }
+  }
+
   function render(): void {
     if (panelId === "damage-summary") renderDamage();
+    else if (panelId === "first-casts") renderFirstCasts();
     else if (panelId === "gear-rarity") renderGear();
     else renderCasts();
   }
@@ -279,6 +339,7 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
       return;
     }
     if (event.data?.type === "damage-result") damageRows = event.data.rows as DamageRow[];
+    if (event.data?.type === "first-casts-result") firstCastEncounters = event.data.encounters as FirstCastEncounter[];
     if (event.data?.type === "casts-result") castRows = event.data.rows as CastRow[];
     if (event.data?.type === "gear-rarity-result") gearRows = event.data.rows as GearRarityRow[];
     render();
@@ -287,12 +348,15 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
 
   app.innerHTML = '<div class="state">Loading Chronicle event stream…</div>';
   try {
-    const [stream, classificationStream] = await Promise.all([
+    const [stream, classificationStream, healStream] = await Promise.all([
       api.events.getStream(streamType),
       panelId === "damage-summary" ? api.events.getStream("unit_classification") : Promise.resolve(null),
+      panelId === "first-casts" ? api.events.getStream("heal") : Promise.resolve(null),
     ]);
     if (api.lifecycle.signal.aborted || destroyed) return { destroy() {} };
-    const transfer = classificationStream ? [stream.data, classificationStream.data] : [stream.data];
+    const transfer = [stream.data];
+    if (classificationStream) transfer.push(classificationStream.data);
+    if (healStream) transfer.push(healStream.data);
     worker.postMessage(
       {
         type: "init",
@@ -300,6 +364,7 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
         streamType,
         data: stream.data,
         classificationData: classificationStream?.data,
+        healData: healStream?.data,
         selectedEncounterIds: snapshot.selection.encounterIds,
         players: snapshot.instance.players,
         units: snapshot.instance.units,
@@ -323,6 +388,7 @@ async function mountPanel(request: ChroniclePanelMountRequestV1): Promise<Chroni
         gearSort = parseGearSort(next.panel.option);
         renderGear();
       } else if (panelId === "replay-casts") renderCasts();
+      else if (panelId === "first-casts") renderFirstCasts();
     },
     destroy() {
       destroyed = true;
