@@ -13,13 +13,13 @@
   "artifacts": {
     "entry": {
       "path": "dist/panel.js",
-      "sha256": "146cf434cdbd9e59425fa33bc648f5b24f48d2219b6a2da414c6c2da5445dd82",
-      "size": 12183
+      "sha256": "355ad1403930751f4291e1291bbbadb283a2be0fcbbc74fd1ab20b1272ff22d9",
+      "size": 12162
     },
     "worker": {
       "path": "dist/worker.js",
-      "sha256": "d091f94575ce3775f0a3d54f0eba0cdd98dd068b027e0c006aa19d31705bb603",
-      "size": 142178
+      "sha256": "cc15194d344dafdf7363c6494c4848aad9ad0f32aefae8aa96a1e09a06d89f9e",
+      "size": 142544
     },
     "styles": {
       "path": "dist/panel.css",
