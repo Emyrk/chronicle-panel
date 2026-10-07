@@ -43,6 +43,42 @@ header span { color: var(--muted-foreground, #a1a1aa); font-size: 11px; }
 .bar { height: 5px; background: color-mix(in srgb, currentColor 8%, transparent); border-radius: 999px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: #f59e0b; border-radius: inherit; }
 
+.damage-row-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.damage-row-button:hover, .damage-row-button[aria-expanded="true"] {
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+.damage-breakout {
+  padding: 4px 10px 7px 42px;
+  background: color-mix(in srgb, currentColor 3%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+}
+.damage-breakout-row {
+  display: grid;
+  grid-template-columns: minmax(90px, .8fr) minmax(120px, 1.4fr) 82px;
+  gap: 10px;
+  padding: 3px 0;
+}
+.damage-breakout-heading {
+  color: var(--muted-foreground, #a1a1aa);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.damage-breakout .actor, .damage-breakout .ability {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .gear-table { min-height: 0; overflow: auto; scrollbar-width: thin; }
 .gear-row {
   display: grid;
