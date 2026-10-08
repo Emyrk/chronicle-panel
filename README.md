@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="https://chronicleclassic.com/">
+  <a href="https://chronicleclassic.com/?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=readme&amp;utm_id=chronicle_panel&amp;utm_content=logo">
     <img src=".github/assets/ChronicleLogoCenter.svg" alt="Chronicle" width="320" />
   </a>
 </p>
 
 <p align="center">
-  <a href="https://chronicleclassic.com/">chronicleclassic.com</a>
+  <a href="https://chronicleclassic.com/?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=readme&amp;utm_id=chronicle_panel&amp;utm_content=site_link">chronicleclassic.com</a>
 </p>
 
 ---
