@@ -76,11 +76,7 @@ Run Chronicle through the development proxy to preview this checkout's panels ag
 pnpm dev
 ```
 
-On the first visit, the proxy loads Chronicle's current site list from `https://legacy.chronicleclassic.com/api/v1/discovery` and asks which site to proxy. The choice is saved in the git-ignored `.chronicle-panel-dev.json` file. To choose another site later:
-
-```bash
-pnpm dev -- --choose-site
-```
+Each time the dev server starts, the proxy loads Chronicle's current site list from `https://legacy.chronicleclassic.com/api/v1/discovery` and asks which site to proxy. The choice lasts only for that dev server run.
 
 You can also select a site or port non-interactively:
 

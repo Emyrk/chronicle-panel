@@ -109,7 +109,7 @@ breakout.root.append(content);
 ## Development proxy
 
 - Chronicle has many site deployments. Never hardcode one deployment as the only preview target.
-- `pnpm dev` must source selectable sites from `https://legacy.chronicleclassic.com/api/v1/discovery` and persist the developer's choice only in the git-ignored `.chronicle-panel-dev.json` file.
+- `pnpm dev` must source selectable sites from `https://legacy.chronicleclassic.com/api/v1/discovery` and ask the developer to choose again on each run. Keep the choice in memory only.
 - Keep the local side-load development-only. Do not weaken the production manifest, immutable artifact, digest, or authentication contracts.
 
 ## Validation

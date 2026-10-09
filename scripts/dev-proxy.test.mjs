@@ -8,6 +8,7 @@ import {
   normalizeSite,
   parseArguments,
   proxyRequest,
+  renderSiteChooser,
   rewriteLocation,
   rewriteSetCookie,
 } from "./dev-proxy.mjs";
@@ -78,6 +79,18 @@ describe("parseArguments", () => {
       port: 5000,
       chooseSite: true,
     });
+  });
+});
+
+describe("renderSiteChooser", () => {
+  it("explains that site selection lasts only for the current run", () => {
+    const html = renderSiteChooser([{
+      url: "https://octo.chronicleclassic.com",
+      branding: { display_name: "Octo" },
+    }]);
+    expect(html).toContain("applies only to the current dev server run");
+    expect(html).toContain("Choose again after restarting the server");
+    expect(html).not.toContain(".chronicle-panel-dev.json");
   });
 });
 

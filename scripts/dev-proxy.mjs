@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { watch } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import http from "node:http";
 import https from "node:https";
 import { extname, resolve } from "node:path";
@@ -10,7 +10,6 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-export const CONFIG_PATH = ".chronicle-panel-dev.json";
 export const DISCOVERY_URL = "https://legacy.chronicleclassic.com/api/v1/discovery";
 export const DEV_ROUTE_PREFIX = "/__chronicle-panel";
 export const RAW_ARTIFACT_PREFIX = "https://raw.githubusercontent.com/__chronicle_panel_dev__/local/";
@@ -141,7 +140,7 @@ export function renderSiteChooser(sites, errorMessage = "") {
   }).join("\n");
   const error = errorMessage ? `<p class="error">${escapeHtml(errorMessage)}</p>` : "";
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Choose a Chronicle site</title><style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#111;color:#eee}body{max-width:900px;margin:0 auto;padding:32px 20px}h1{margin-bottom:8px}p{color:#aaa}.error{color:#ff9b8f}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}button{display:flex;gap:12px;text-align:left;align-items:center;background:#1c1c1c;color:inherit;border:1px solid #333;border-radius:10px;padding:14px;cursor:pointer}button:hover{border-color:#e8a82e;background:#242018}img{width:48px;height:48px;object-fit:cover;border-radius:8px}span{min-width:0;display:grid;gap:3px}small,code{color:#aaa;overflow:hidden;text-overflow:ellipsis}code{font-size:11px}</style></head><body><h1>Choose a Chronicle site</h1><p>The selection is saved in <code>${CONFIG_PATH}</code>. Reopen this screen later with <code>pnpm dev -- --choose-site</code>.</p>${error}<form method="post" action="${DEV_ROUTE_PREFIX}/select-site"><div class="grid">${cards}</div></form></body></html>`;
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#111;color:#eee}body{max-width:900px;margin:0 auto;padding:32px 20px}h1{margin-bottom:8px}p{color:#aaa}.error{color:#ff9b8f}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}button{display:flex;gap:12px;text-align:left;align-items:center;background:#1c1c1c;color:inherit;border:1px solid #333;border-radius:10px;padding:14px;cursor:pointer}button:hover{border-color:#e8a82e;background:#242018}img{width:48px;height:48px;object-fit:cover;border-radius:8px}span{min-width:0;display:grid;gap:3px}small,code{color:#aaa;overflow:hidden;text-overflow:ellipsis}code{font-size:11px}</style></head><body><h1>Choose a Chronicle site</h1><p>This choice applies only to the current dev server run. Choose again after restarting the server.</p>${error}<form method="post" action="${DEV_ROUTE_PREFIX}/select-site"><div class="grid">${cards}</div></form></body></html>`;
 }
 
 function escapeHtml(value) {
@@ -165,21 +164,6 @@ export async function fetchDiscovery(fetchImpl = fetch) {
   const sites = await response.json();
   if (!Array.isArray(sites)) throw new Error("Discovery returned an invalid response.");
   return sites.map((site) => ({ ...site, url: normalizeSite(site.url) }));
-}
-
-async function readConfig() {
-  try {
-    const config = JSON.parse(await readFile(CONFIG_PATH, "utf8"));
-    return { site: normalizeSite(config.site) };
-  } catch (error) {
-    if (error?.code === "ENOENT") return null;
-    console.warn(`Ignoring invalid ${CONFIG_PATH}: ${error.message}`);
-    return null;
-  }
-}
-
-async function saveConfig(site) {
-  await writeFile(CONFIG_PATH, `${JSON.stringify({ site }, null, 2)}\n`);
 }
 
 async function buildPanelArtifacts() {
@@ -303,7 +287,7 @@ function createSourceWatcher(onChange) {
 }
 
 export async function startDevProxy({ port = DEFAULT_PORT, initialSite = null, chooseSite = false } = {}) {
-  let selectedSite = chooseSite ? null : initialSite ?? (await readConfig())?.site ?? null;
+  let selectedSite = chooseSite ? null : initialSite;
   let discovery = [];
   let discoveryError = "";
   const eventClients = new Set();
@@ -373,7 +357,6 @@ export async function startDevProxy({ port = DEFAULT_PORT, initialSite = null, c
           throw new Error("Choose a site returned by Chronicle discovery.");
         }
         selectedSite = nextSite;
-        await saveConfig(nextSite);
         response.writeHead(303, { Location: "/" });
         response.end();
         console.log(`[panel-dev] proxying ${nextSite}`);
@@ -431,7 +414,6 @@ export async function startDevProxy({ port = DEFAULT_PORT, initialSite = null, c
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const options = parseArguments(process.argv.slice(2));
-  if (options.site) await saveConfig(options.site);
   const proxy = await startDevProxy({
     port: options.port,
     initialSite: options.site,
