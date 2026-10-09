@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { createReadStream, watch } from "node:fs";
+import { watch } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import http from "node:http";
 import https from "node:https";
@@ -190,6 +190,23 @@ async function readManifest() {
   return JSON.parse(await readFile(MANIFEST_PATH, "utf8"));
 }
 
+async function loadPanelSnapshot() {
+  const manifest = await readManifest();
+  const artifacts = new Map();
+  for (const artifact of Object.values(manifest.artifacts)) {
+    const bytes = await readFile(artifact.path);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    if (bytes.byteLength !== artifact.size || sha256 !== artifact.sha256) {
+      throw new Error(`Built artifact ${artifact.path} does not match chronicle-panel.json.`);
+    }
+    artifacts.set(artifact.path, {
+      bytes,
+      contentType: MIME_TYPES.get(extname(artifact.path)) || "application/octet-stream",
+    });
+  }
+  return { manifest, artifacts };
+}
+
 function sendJson(response, status, value) {
   const body = JSON.stringify(value);
   response.writeHead(status, {
@@ -232,7 +249,7 @@ function copyProxyHeaders(headers, upstream, localOrigin) {
   return copied;
 }
 
-function proxyRequest(request, response, upstream, localOrigin) {
+export function proxyRequest(request, response, upstream, localOrigin) {
   const target = new URL(request.url, upstream);
   const client = target.protocol === "https:" ? https : http;
   const proxy = client.request(target, {
@@ -301,6 +318,7 @@ export async function startDevProxy({ port = DEFAULT_PORT, initialSite = null, c
   }
 
   await buildPanelArtifacts();
+  let panelSnapshot = await loadPanelSnapshot();
 
   const rebuild = async () => {
     if (building) {
@@ -310,6 +328,7 @@ export async function startDevProxy({ port = DEFAULT_PORT, initialSite = null, c
     building = true;
     try {
       await buildPanelArtifacts();
+      panelSnapshot = await loadPanelSnapshot();
       console.log(`[panel-dev] rebuilt at ${new Date().toLocaleTimeString()}`);
       for (const client of eventClients) client.write("event: built\ndata: {}\n\n");
     } catch (error) {
@@ -369,24 +388,22 @@ export async function startDevProxy({ port = DEFAULT_PORT, initialSite = null, c
         (request.method === "GET" || request.method === "PUT")
       ) {
         if (request.method === "PUT") await readRequestBody(request, 2 * 1024 * 1024);
-        sendJson(response, 200, createCustomPanelSettings(await readManifest()));
+        sendJson(response, 200, createCustomPanelSettings(panelSnapshot.manifest));
         return;
       }
       if (requestUrl.pathname.startsWith(`${DEV_ROUTE_PREFIX}/artifacts/`)) {
         const artifactPath = decodeURIComponent(requestUrl.pathname.slice(`${DEV_ROUTE_PREFIX}/artifacts/`.length));
-        const manifest = await readManifest();
-        const artifact = Object.values(manifest.artifacts).find((candidate) => candidate.path === artifactPath);
+        const artifact = panelSnapshot.artifacts.get(artifactPath);
         if (!artifact) {
           sendJson(response, 404, { error: "Unknown panel artifact." });
           return;
         }
-        const absolutePath = resolve(artifact.path);
         response.writeHead(200, {
           "Cache-Control": "no-store",
-          "Content-Type": MIME_TYPES.get(extname(absolutePath)) || "application/octet-stream",
-          "Content-Length": artifact.size,
+          "Content-Type": artifact.contentType,
+          "Content-Length": artifact.bytes.byteLength,
         });
-        createReadStream(absolutePath).pipe(response);
+        response.end(artifact.bytes);
         return;
       }
       proxyRequest(request, response, new URL(selectedSite), localOrigin);

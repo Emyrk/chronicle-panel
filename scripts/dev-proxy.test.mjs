@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { describe, expect, it } from "vitest";
 import {
   RAW_ARTIFACT_PREFIX,
@@ -6,6 +7,7 @@ import {
   injectDevBootstrap,
   normalizeSite,
   parseArguments,
+  proxyRequest,
   rewriteLocation,
   rewriteSetCookie,
 } from "./dev-proxy.mjs";
@@ -24,6 +26,19 @@ const manifest = {
   },
   panels: [{ id: "example", name: "Example", streams: [] }],
 };
+
+async function listen(server) {
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  return `http://127.0.0.1:${address.port}`;
+}
+
+async function close(server) {
+  await new Promise((resolve) => server.close(resolve));
+}
 
 describe("canonicalizeJson", () => {
   it("sorts object keys recursively", () => {
@@ -84,6 +99,36 @@ describe("proxy response rewriting", () => {
       "session=value; Path=/; Domain=.octo.chronicleclassic.com; Secure; HttpOnly",
       "octo.chronicleclassic.com",
     )).toBe("session=value; Path=/; HttpOnly");
+  });
+});
+
+describe("proxyRequest", () => {
+  it("streams non-HTML bytes unchanged and injects only HTML", async () => {
+    const binary = Buffer.from([0, 255, 1, 128, 2]);
+    const upstream = createServer((request, response) => {
+      if (request.url === "/data") {
+        response.writeHead(200, { "Content-Type": "application/octet-stream" });
+        response.end(binary);
+        return;
+      }
+      response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      response.end("<!doctype html><html><head></head><body>ok</body></html>");
+    });
+    const upstreamOrigin = await listen(upstream);
+    const proxy = createServer((request, response) => {
+      proxyRequest(request, response, new URL(upstreamOrigin), "http://localhost");
+    });
+    const proxyOrigin = await listen(proxy);
+    try {
+      const data = Buffer.from(await (await fetch(`${proxyOrigin}/data`)).arrayBuffer());
+      expect(data).toEqual(binary);
+      const html = await (await fetch(`${proxyOrigin}/`)).text();
+      expect(html).toContain("data-chronicle-panel-dev");
+      expect(html).toContain("<body>ok</body>");
+    } finally {
+      await close(proxy);
+      await close(upstream);
+    }
   });
 });
 
