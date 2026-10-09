@@ -68,6 +68,26 @@ git add chronicle-panel.json dist
 
 During development, install a branch or commit through Chronicle's **Settings → Custom panels** UI. Chronicle resolves it to an immutable SHA before execution.
 
+## Local panel preview
+
+Run Chronicle through the development proxy to preview this checkout's panels against public reports without installing a Git commit or signing in:
+
+```bash
+pnpm dev
+```
+
+Each time the dev server starts, the proxy loads Chronicle's current site list from `https://legacy.chronicleclassic.com/api/v1/discovery` and asks which site to proxy. The choice lasts only for that dev server run.
+
+You can also select a site or port non-interactively:
+
+```bash
+pnpm dev -- --site https://octo.chronicleclassic.com --port 4173
+```
+
+The proxy builds the panel library, serves the local artifacts, and supplies a development-only custom-panel installation to Chronicle. Changes under `src/` rebuild the artifacts and reload connected preview pages. The local panels then appear in Chronicle's regular panel selector and use the selected site's real host APIs, event streams, replay state, and public report data.
+
+This does not bypass authorization for private reports or account-only features. The proxy only replaces the current account's custom-panel settings response with the local development installation.
+
 ## Important files
 
 ```text
