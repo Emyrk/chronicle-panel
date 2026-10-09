@@ -226,11 +226,34 @@ function copyProxyHeaders(headers, upstream, localOrigin) {
   delete copied.host;
   delete copied.connection;
   delete copied["content-length"];
+  delete copied["if-modified-since"];
+  delete copied["if-none-match"];
   copied.host = upstream.host;
   copied["accept-encoding"] = "identity";
+  copied["cache-control"] = "no-cache";
+  copied.pragma = "no-cache";
   if (copied.origin) copied.origin = upstream.origin;
   if (copied.referer) copied.referer = copied.referer.replace(localOrigin, upstream.origin);
   return copied;
+}
+
+export function disableProxyCaching(headers) {
+  const uncached = { ...headers };
+  for (const header of [
+    "age",
+    "cache-control",
+    "cdn-cache-control",
+    "cloudflare-cdn-cache-control",
+    "etag",
+    "expires",
+    "last-modified",
+    "pragma",
+    "surrogate-control",
+  ]) {
+    delete uncached[header];
+  }
+  uncached["cache-control"] = "no-store";
+  return uncached;
 }
 
 export function proxyRequest(request, response, upstream, localOrigin) {
@@ -240,7 +263,7 @@ export function proxyRequest(request, response, upstream, localOrigin) {
     method: request.method,
     headers: copyProxyHeaders(request.headers, upstream, localOrigin),
   }, (upstreamResponse) => {
-    const headers = { ...upstreamResponse.headers };
+    const headers = disableProxyCaching(upstreamResponse.headers);
     delete headers["content-length"];
     delete headers["content-encoding"];
     delete headers["transfer-encoding"];

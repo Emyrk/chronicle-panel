@@ -116,11 +116,21 @@ describe("proxy response rewriting", () => {
 });
 
 describe("proxyRequest", () => {
-  it("streams non-HTML bytes unchanged and injects only HTML", async () => {
+  it("streams non-HTML bytes unchanged, disables caching, and injects only HTML", async () => {
     const binary = Buffer.from([0, 255, 1, 128, 2]);
+    let dataRequestHeaders;
     const upstream = createServer((request, response) => {
       if (request.url === "/data") {
-        response.writeHead(200, { "Content-Type": "application/octet-stream" });
+        dataRequestHeaders = request.headers;
+        response.writeHead(200, {
+          Age: "60",
+          "Cache-Control": "public, max-age=3600",
+          "Content-Type": "application/octet-stream",
+          ETag: '"cached-data"',
+          Expires: "Fri, 09 Oct 2026 12:00:00 GMT",
+          "Last-Modified": "Fri, 09 Oct 2026 10:00:00 GMT",
+          "Surrogate-Control": "max-age=3600",
+        });
         response.end(binary);
         return;
       }
@@ -133,8 +143,23 @@ describe("proxyRequest", () => {
     });
     const proxyOrigin = await listen(proxy);
     try {
-      const data = Buffer.from(await (await fetch(`${proxyOrigin}/data`)).arrayBuffer());
+      const dataResponse = await fetch(`${proxyOrigin}/data`, {
+        headers: {
+          "If-Modified-Since": "Fri, 09 Oct 2026 10:00:00 GMT",
+          "If-None-Match": '"cached-data"',
+        },
+      });
+      const data = Buffer.from(await dataResponse.arrayBuffer());
       expect(data).toEqual(binary);
+      expect(dataResponse.headers.get("cache-control")).toBe("no-store");
+      for (const header of ["age", "etag", "expires", "last-modified", "surrogate-control"]) {
+        expect(dataResponse.headers.get(header)).toBeNull();
+      }
+      expect(dataRequestHeaders["if-modified-since"]).toBeUndefined();
+      expect(dataRequestHeaders["if-none-match"]).toBeUndefined();
+      expect(dataRequestHeaders["cache-control"]).toBe("no-cache");
+      expect(dataRequestHeaders.pragma).toBe("no-cache");
+
       const html = await (await fetch(`${proxyOrigin}/`)).text();
       expect(html).toContain("data-chronicle-panel-dev");
       expect(html).toContain("<body>ok</body>");
