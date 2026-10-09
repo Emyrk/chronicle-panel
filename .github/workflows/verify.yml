@@ -1,0 +1,49 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm check
+
+      - name: Test
+        run: pnpm test
+
+      - name: Verify committed artifacts and manifest metadata
+        run: |
+          if ! pnpm verify:artifacts; then
+            echo "Generated artifacts are stale. Run 'pnpm build' and commit chronicle-panel.json with dist/."
+            exit 1
+          fi
+          if [[ -n "$(git status --porcelain --untracked-files=all -- chronicle-panel.json dist)" ]]; then
+            echo "Generated artifacts are not committed. Run 'pnpm build' and commit chronicle-panel.json with dist/."
+            git status --short -- chronicle-panel.json dist
+            exit 1
+          fi
