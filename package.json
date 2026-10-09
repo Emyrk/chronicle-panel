@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify:artifacts": "pnpm build && git diff --exit-code -- chronicle-panel.json dist"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.11.0",
